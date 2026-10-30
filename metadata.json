@@ -1,0 +1,6 @@
+{
+  "name": "TikTok Games",
+  "description": "Compite con amigos en juegos virales de TikTok en tiempo real, duelos 1v1 en un mismo dispositivo, torneos privados con reinicio diario y marcadores globales.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

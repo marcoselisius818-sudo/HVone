@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- TikTok-inspired cyan offset glow -->
+    <path
+        android:fillColor="#00F2FE"
+        android:pathData="M52,30C41.5,30 33,38.5 33,49C33,59.5 41.5,68 52,68C62.5,68 71,59.5 71,49C71,38.5 62.5,30 52,30ZM52,62C44.8,62 39,56.2 39,49C39,41.8 44.8,36 52,36C59.2,36 65,41.8 65,49C65,56.2 59.2,62 52,62ZM50,22L54,22L54,27L50,27ZM67,27L71,31L67.5,34.5L63.5,30.5Z" />
+    <!-- TikTok-inspired magenta offset glow -->
+    <path
+        android:fillColor="#FE2C55"
+        android:pathData="M56,32C45.5,32 37,40.5 37,51C37,61.5 45.5,70 56,70C66.5,70 75,61.5 75,51C75,40.5 66.5,32 56,32ZM56,64C48.8,64 43,58.2 43,51C43,43.8 48.8,38 56,38C63.2,38 69,43.8 69,51C69,58.2 63.2,64 56,64ZM54,24L58,24L58,29L54,29ZM71,29L75,33L71.5,36.5L67.5,32.5Z" />
+    <!-- Main white stopwatch and lightning trophy elements -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,31C43.5,31 35,39.5 35,50C35,60.5 43.5,69 54,69C64.5,69 73,60.5 73,50C73,39.5 64.5,31 54,31ZM54,63C46.8,63 41,57.2 41,50C41,42.8 46.8,37 54,37C61.2,37 67,42.8 67,50C67,57.2 61.2,63 54,63ZM52,23L56,23L56,28L52,28ZM69,28L73,32L69.5,35.5L65.5,31.5Z" />
+    <!-- 10.00s Stopwatch Hands / Digital Spark -->
+    <path
+        android:fillColor="#00F2FE"
+        android:pathData="M52.5,41L55.5,41L55.5,50L60.5,50L60.5,53L52.5,53Z" />
+    <!-- Duel VS swords / lightning accents below -->
+    <path
+        android:fillColor="#FE2C55"
+        android:pathData="M37,76L49,76L43,86Z" />
+    <path
+        android:fillColor="#00F2FE"
+        android:pathData="M71,76L59,76L65,86Z" />
+</vector>

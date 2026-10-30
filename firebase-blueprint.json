@@ -1,0 +1,56 @@
+{
+  "entities": {
+    "User": {
+      "path": "/users/{userId}",
+      "description": "User profile with cloud stats and TikTok trophies",
+      "fields": {
+        "userId": { "type": "string" },
+        "nickname": { "type": "string" },
+        "handle": { "type": "string" },
+        "avatar": { "type": "string" },
+        "bio": { "type": "string" },
+        "level": { "type": "number" },
+        "xp": { "type": "number" },
+        "diamonds": { "type": "number" },
+        "totalWins": { "type": "number" },
+        "totalLosses": { "type": "number" },
+        "dailyScore": { "type": "number" },
+        "streakDays": { "type": "number" },
+        "best10sDiffMs": { "type": "number" },
+        "bestTapPerSec": { "type": "number" },
+        "tournamentTrophies": { "type": "number" },
+        "createdAt": { "type": "timestamp" },
+        "updatedAt": { "type": "timestamp" }
+      }
+    },
+    "Match": {
+      "path": "/users/{userId}/matches/{matchId}",
+      "description": "History of played games and duels",
+      "fields": {
+        "userId": { "type": "string" },
+        "gameType": { "type": "string" },
+        "score": { "type": "number" },
+        "scoreDetail": { "type": "string" },
+        "opponentName": { "type": "string" },
+        "isWin": { "type": "boolean" },
+        "isTournament": { "type": "boolean" },
+        "dateString": { "type": "string" },
+        "createdAt": { "type": "timestamp" }
+      }
+    },
+    "LeaderboardEntry": {
+      "path": "/leaderboard/{userId}",
+      "description": "Public global daily and all-time leaderboard entry",
+      "fields": {
+        "userId": { "type": "string" },
+        "nickname": { "type": "string" },
+        "handle": { "type": "string" },
+        "avatar": { "type": "string" },
+        "score": { "type": "number" },
+        "countryFlag": { "type": "string" },
+        "badge": { "type": "string" },
+        "updatedAt": { "type": "timestamp" }
+      }
+    }
+  }
+}
