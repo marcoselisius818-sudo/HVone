@@ -28,11 +28,11 @@ class FirestoreSyncManager(private val context: Context) {
   suspend fun syncUserProfileToCloud(profile: UserProfileEntity): Result<Unit> {
     return try {
       if (FirebaseApp.getApps(context).isEmpty()) {
-        return Result.failure(IllegalStateException("Firebase no está configurado en este dispositivo."))
+        return Result.failure(IllegalStateException("Servicio en la nube no disponible."))
       }
 
       val currentUser = Firebase.auth.currentUser ?: return Result.failure(
-        IllegalStateException("Usuario no autenticado con Google.")
+        IllegalStateException("Sesión no iniciada.")
       )
 
       val uid = currentUser.uid
@@ -57,7 +57,7 @@ class FirestoreSyncManager(private val context: Context) {
 
       userDoc.set(profilePayload, SetOptions.merge()).await()
 
-      // Also update public leaderboard entry
+      // Update public leaderboard entry
       val leaderboardDoc = db.collection("leaderboard").document(uid)
       val leaderboardPayload = hashMapOf<String, Any>(
         "userId" to uid,
@@ -70,10 +70,10 @@ class FirestoreSyncManager(private val context: Context) {
       )
       leaderboardDoc.set(leaderboardPayload, SetOptions.merge()).await()
 
-      Log.d(TAG, "Perfil y marcador sincronizados con éxito en Firestore")
+      Log.d(TAG, "Progreso guardado automáticamente en la cuenta del usuario")
       Result.success(Unit)
     } catch (e: Exception) {
-      Log.e(TAG, "Error al sincronizar con Firestore", e)
+      Log.e(TAG, "Error al guardar progreso en la nube", e)
       Result.failure(e)
     }
   }

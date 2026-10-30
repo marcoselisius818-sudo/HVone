@@ -22,6 +22,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.VolumeOff
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Button
@@ -50,6 +52,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.ui.theme.ElectricGold
 import com.example.ui.theme.ElectricGreen
 import com.example.ui.theme.NeonCyan
@@ -60,6 +63,7 @@ import com.example.ui.theme.TextMuted
 import com.example.ui.theme.TextPrimary
 import com.example.ui.theme.TextSecondary
 import com.example.ui.util.HapticHelper
+import com.example.ui.util.SoundHelper
 import kotlinx.coroutines.delay
 import kotlin.random.Random
 
@@ -103,6 +107,7 @@ private fun GameColorSoloView(
   onRecordResult: (score: Int, detail: String, opponent: String, isWin: Boolean) -> Unit
 ) {
   val context = LocalContext.current
+  val isMuted by SoundHelper.isMuted.collectAsStateWithLifecycle()
   var isRunning by remember { mutableStateOf(false) }
   var score by remember { mutableIntStateOf(0) }
   var streak by remember { mutableIntStateOf(0) }
@@ -132,7 +137,8 @@ private fun GameColorSoloView(
         if (timeLeft == 0) {
           isRunning = false
           isCompleted = true
-          HapticHelper.success(context)
+          HapticHelper.vibrateOnly(context, 90L)
+          SoundHelper.playVictory()
           onRecordResult(score, "$score pts ($streak racha)", "Solo Stroop", score >= 800)
         }
       }
@@ -149,18 +155,28 @@ private fun GameColorSoloView(
     // Header
     Row(
       modifier = Modifier.fillMaxWidth(),
-      verticalAlignment = Alignment.CenterVertically
+      verticalAlignment = Alignment.CenterVertically,
+      horizontalArrangement = Arrangement.SpaceBetween
     ) {
-      IconButton(onClick = onBack, modifier = Modifier.testTag("back_button")) {
-        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver", tint = TextPrimary)
+      Row(verticalAlignment = Alignment.CenterVertically) {
+        IconButton(onClick = onBack, modifier = Modifier.testTag("back_button")) {
+          Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver", tint = TextPrimary)
+        }
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+          text = "Reflejo Mental Stroop",
+          style = MaterialTheme.typography.titleLarge,
+          fontWeight = FontWeight.Bold,
+          color = TextPrimary
+        )
       }
-      Spacer(modifier = Modifier.width(8.dp))
-      Text(
-        text = "Reflejo Mental Stroop",
-        style = MaterialTheme.typography.titleLarge,
-        fontWeight = FontWeight.Bold,
-        color = TextPrimary
-      )
+      IconButton(onClick = { SoundHelper.toggleMute(context) }) {
+        Icon(
+          imageVector = if (isMuted) Icons.AutoMirrored.Filled.VolumeOff else Icons.AutoMirrored.Filled.VolumeUp,
+          contentDescription = if (isMuted) "Activar sonido" else "Silenciar sonido",
+          tint = if (isMuted) NeonPink else NeonCyan
+        )
+      }
     }
 
     Spacer(modifier = Modifier.height(16.dp))

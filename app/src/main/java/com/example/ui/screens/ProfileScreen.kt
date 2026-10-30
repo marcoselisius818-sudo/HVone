@@ -1,5 +1,6 @@
 package com.example.ui.screens
 
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -19,9 +20,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CloudDone
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.EmojiEvents
-import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -68,9 +69,6 @@ import com.example.ui.theme.TextMuted
 import com.example.ui.theme.TextPrimary
 import com.example.ui.theme.TextSecondary
 import com.example.ui.util.HapticHelper
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 val AvatarOptions = listOf("🔥", "⚡", "👑", "🚀", "💎", "🌸", "🎯", "🌪️", "🦄", "🐱", "🎮", "🕶️")
 
@@ -79,10 +77,10 @@ fun ProfileScreen(
   profile: UserProfileEntity?,
   matches: List<MatchHistoryEntity>,
   dailyRecords: List<DailyRecordEntity>,
+  signedInAccount: String?,
   syncStatus: String?,
-  onSyncCloud: () -> Unit,
   onGoogleSignIn: () -> Unit,
-  onAskGeminiCoach: () -> Unit,
+  onGoogleSignOut: () -> Unit,
   onUpdateProfile: (nickname: String, avatar: String) -> Unit
 ) {
   val context = LocalContext.current
@@ -97,10 +95,12 @@ fun ProfileScreen(
   val xpInCurrentLevel = user.xp % 250
   val xpProgress = xpInCurrentLevel / 250f
 
-  val filteredMatches = when (filterCategory) {
-    "VICTORIAS" -> matches.filter { it.isWin }
-    "TORNEOS" -> matches.filter { it.isTournament }
-    else -> matches
+  val filteredMatches = remember(matches, filterCategory) {
+    when (filterCategory) {
+      "VICTORIAS" -> matches.filter { it.isWin }
+      "TORNEOS" -> matches.filter { it.isTournament }
+      else -> matches
+    }
   }
 
   LazyColumn(
@@ -140,7 +140,7 @@ fun ProfileScreen(
       }
     }
 
-    // Main Profile Card (No bio, no tiktok handle)
+    // Main Profile Card
     item {
       Card(
         colors = CardDefaults.cardColors(containerColor = SurfaceDark),
@@ -222,7 +222,7 @@ fun ProfileScreen(
       }
     }
 
-    // Gemini AI Coach & Firebase Cloud Sync Card
+    // Simplified Progress Saving Card (Google Sign-In with auto-save)
     item {
       Card(
         colors = CardDefaults.cardColors(containerColor = SurfaceDark),
@@ -230,48 +230,63 @@ fun ProfileScreen(
         modifier = Modifier
           .fillMaxWidth()
           .border(1.dp, Color(0xFF282C40), RoundedCornerShape(18.dp))
+          .animateContentSize()
       ) {
         Column(modifier = Modifier.padding(16.dp)) {
-          Text(
-            text = "✨ Gemini AI & Firebase Cloud",
-            fontWeight = FontWeight.Bold,
-            fontSize = 15.sp,
-            color = ElectricGold
-          )
+          Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+              imageVector = if (signedInAccount != null) Icons.Default.CloudDone else Icons.Default.Person,
+              contentDescription = null,
+              tint = if (signedInAccount != null) ElectricGreen else NeonCyan,
+              modifier = Modifier.size(20.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+              text = "Guardado de Progreso",
+              fontWeight = FontWeight.Bold,
+              fontSize = 15.sp,
+              color = if (signedInAccount != null) ElectricGreen else ElectricGold
+            )
+          }
           Spacer(modifier = Modifier.height(8.dp))
-          Text(
-            text = "Tus datos se guardan localmente en Room. Conéctate a Firebase para sincronizar marcadores o pídele un roast/consejo a la IA Gemini 3.8 Flash.",
-            fontSize = 12.sp,
-            color = TextSecondary,
-            lineHeight = 16.sp
-          )
-          Spacer(modifier = Modifier.height(14.dp))
-          Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-          ) {
-            Button(
-              onClick = {
-                HapticHelper.click(context)
-                onAskGeminiCoach()
-              },
-              modifier = Modifier.weight(1f),
-              shape = RoundedCornerShape(12.dp),
-              colors = ButtonDefaults.buttonColors(containerColor = NeonPink, contentColor = Color.White)
-            ) {
-              Text("🤖 Coach Gemini", fontWeight = FontWeight.Bold, fontSize = 11.sp)
-            }
 
+          if (signedInAccount != null) {
+            Text(
+              text = "Cuenta conectada: $signedInAccount\nTus datos, récords y trofeos quedan guardados automáticamente.",
+              fontSize = 12.sp,
+              color = TextSecondary,
+              lineHeight = 17.sp
+            )
+            Spacer(modifier = Modifier.height(12.dp))
             Button(
               onClick = {
                 HapticHelper.click(context)
-                onSyncCloud()
+                onGoogleSignOut()
               },
-              modifier = Modifier.weight(1f),
+              shape = RoundedCornerShape(12.dp),
+              colors = ButtonDefaults.buttonColors(containerColor = SurfaceVariantDark, contentColor = TextSecondary),
+              modifier = Modifier.testTag("google_sign_out_button")
+            ) {
+              Text("Cerrar sesión", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+            }
+          } else {
+            Text(
+              text = "Inicia sesión con tu cuenta de Google para que tus datos, récords y trofeos queden guardados automáticamente.",
+              fontSize = 12.sp,
+              color = TextSecondary,
+              lineHeight = 17.sp
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            Button(
+              onClick = {
+                HapticHelper.click(context)
+                onGoogleSignIn()
+              },
+              modifier = Modifier.fillMaxWidth().testTag("google_sign_in_button"),
               shape = RoundedCornerShape(12.dp),
               colors = ButtonDefaults.buttonColors(containerColor = NeonCyan, contentColor = Color.Black)
             ) {
-              Text("☁️ Sincronizar", fontWeight = FontWeight.Bold, fontSize = 11.sp)
+              Text("Iniciar sesión con Google", fontWeight = FontWeight.Bold, fontSize = 13.sp)
             }
           }
 
@@ -288,7 +303,7 @@ fun ProfileScreen(
       }
     }
 
-    // Career Stats 2x3 Grid
+    // Career Stats 2x2 Grid
     item {
       Text(
         text = "Estadísticas de Competencia",
@@ -335,12 +350,18 @@ fun ProfileScreen(
       ) {
         Tab(
           selected = historyTab == 0,
-          onClick = { historyTab = 0 },
+          onClick = {
+            HapticHelper.click(context)
+            historyTab = 0
+          },
           text = { Text("Historial de Partidas", fontWeight = FontWeight.Bold) }
         )
         Tab(
           selected = historyTab == 1,
-          onClick = { historyTab = 1 },
+          onClick = {
+            HapticHelper.click(context)
+            historyTab = 1
+          },
           text = { Text("Días Guardados", fontWeight = FontWeight.Bold) }
         )
       }
@@ -356,7 +377,10 @@ fun ProfileScreen(
           listOf("TODAS", "VICTORIAS", "TORNEOS").forEach { cat ->
             FilterChip(
               selected = filterCategory == cat,
-              onClick = { filterCategory = cat },
+              onClick = {
+                HapticHelper.click(context)
+                filterCategory = cat
+              },
               label = { Text(cat.lowercase().replaceFirstChar { it.uppercase() }) },
               colors = FilterChipDefaults.filterChipColors(
                 selectedContainerColor = NeonPink,
@@ -391,7 +415,7 @@ fun ProfileScreen(
           }
         }
       } else {
-        items(filteredMatches) { match ->
+        items(filteredMatches, key = { it.id }) { match ->
           Card(
             colors = CardDefaults.cardColors(containerColor = SurfaceDark),
             shape = RoundedCornerShape(14.dp),
@@ -451,7 +475,6 @@ fun ProfileScreen(
         }
       }
     } else {
-      // Días Anteriores Guardados (Persistent daily reset archives)
       if (dailyRecords.isEmpty()) {
         item {
           Card(
@@ -471,7 +494,7 @@ fun ProfileScreen(
                 color = TextPrimary
               )
               Text(
-                text = "Al finalizar cada día, el marcador diario se reinicia pero tus estadísticas quedan archivadas para siempre.",
+                text = "Al finalizar cada día, el marcador diario se reinicia pero tus estadísticas quedan archivadas.",
                 fontSize = 12.sp,
                 color = TextSecondary,
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center
@@ -480,7 +503,7 @@ fun ProfileScreen(
           }
         }
       } else {
-        items(dailyRecords) { record ->
+        items(dailyRecords, key = { it.dateString }) { record ->
           Card(
             colors = CardDefaults.cardColors(containerColor = SurfaceDark),
             shape = RoundedCornerShape(14.dp),
@@ -547,7 +570,10 @@ fun ProfileScreen(
                   .size(38.dp)
                   .clip(CircleShape)
                   .background(if (editAvatar == av) NeonPink else SurfaceVariantDark)
-                  .clickable { editAvatar = av },
+                  .clickable {
+                    HapticHelper.click(context)
+                    editAvatar = av
+                  },
                 contentAlignment = Alignment.Center
               ) {
                 Text(text = av, fontSize = 20.sp)
@@ -564,7 +590,10 @@ fun ProfileScreen(
                   .size(38.dp)
                   .clip(CircleShape)
                   .background(if (editAvatar == av) NeonPink else SurfaceVariantDark)
-                  .clickable { editAvatar = av },
+                  .clickable {
+                    HapticHelper.click(context)
+                    editAvatar = av
+                  },
                 contentAlignment = Alignment.Center
               ) {
                 Text(text = av, fontSize = 20.sp)
@@ -589,6 +618,7 @@ fun ProfileScreen(
       confirmButton = {
         Button(
           onClick = {
+            HapticHelper.click(context)
             showEditDialog = false
             onUpdateProfile(editName, editAvatar)
           },

@@ -37,6 +37,9 @@ jobs:
 
       - name: Preparar archivo .env y Keystore
         run: |
+          if [ ! -f .env.example ]; then
+            touch .env.example
+          fi
           if [ ! -f .env ]; then
             cp .env.example .env
           fi
@@ -53,12 +56,7 @@ jobs:
 
       - name: Compilar APK (Debug)
         run: |
-          if [ -f ./gradlew ]; then
-            chmod +x ./gradlew
-            ./gradlew assembleDebug --no-daemon --stacktrace
-          else
-            gradle assembleDebug --no-daemon --stacktrace
-          fi
+          gradle assembleDebug --no-daemon --stacktrace
 
       - name: Subir APK listo para descargar (Artifacts)
         uses: actions/upload-artifact@v4

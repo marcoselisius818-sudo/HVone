@@ -1,13 +1,13 @@
 package com.example.ui.screens
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -22,12 +22,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.VolumeOff
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -35,39 +34,38 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.ui.theme.ElectricGold
-import com.example.ui.theme.ElectricGreen
-import com.example.ui.theme.MagentaGlow
 import com.example.ui.theme.NeonCyan
 import com.example.ui.theme.NeonPink
 import com.example.ui.theme.SurfaceDark
 import com.example.ui.theme.SurfaceVariantDark
 import com.example.ui.theme.TextPrimary
-import com.example.ui.theme.TextSecondary
 import com.example.ui.util.HapticHelper
+import com.example.ui.util.SoundHelper
 import kotlinx.coroutines.delay
 import kotlin.random.Random
 
 data class FallingItem(
   val id: Long,
   val lane: Int, // 0..4
-  var yPercent: Float = 0f, // 0.0 top to 1.0 bottom
+  val yPercent: Float = 0f, // 0.0 top to 1.0 bottom
   val emoji: String,
   val points: Int,
   val isBomb: Boolean = false
@@ -80,34 +78,39 @@ fun GameEmojiScreen(
 ) {
   BackHandler { onBack() }
   val context = LocalContext.current
+  val isMuted by SoundHelper.isMuted.collectAsStateWithLifecycle()
 
   var isPlaying by remember { mutableStateOf(false) }
   var isGameOver by remember { mutableStateOf(false) }
   var score by remember { mutableIntStateOf(0) }
   var lives by remember { mutableIntStateOf(3) }
   var basketLane by remember { mutableIntStateOf(2) } // 0..4
-  val items = remember { mutableStateListOf<FallingItem>() }
+  var items by remember { mutableStateOf<List<FallingItem>>(emptyList()) }
   var nextId by remember { mutableStateOf(0L) }
 
-  // Game loop
+  // Optimized 60 FPS game loop with immutable state updates
   LaunchedEffect(isPlaying) {
     if (isPlaying) {
-      items.clear()
+      items = emptyList()
       score = 0
       lives = 3
       basketLane = 2
-      var spawnTicker = 0
+      var frameTicker = 0
 
       while (isPlaying && lives > 0) {
-        delay(35) // ~30 fps
-        spawnTicker++
+        delay(16L) // ~60 FPS
+        frameTicker++
 
-        // Spawn new item
-        if (spawnTicker % 15 == 0) {
-          val isBomb = Random.nextFloat() < 0.35f
+        val updated = ArrayList<FallingItem>(items.size + 1)
+        var currentLives = lives
+        var currentScore = score
+
+        // Spawn new item every ~28 frames (~450ms)
+        if (frameTicker % 28 == 0) {
+          val isBomb = Random.nextFloat() < 0.34f
           val emoji = if (isBomb) "💣" else listOf("💎", "🍒", "⭐").random()
           val pts = if (isBomb) 0 else if (emoji == "💎") 50 else if (emoji == "⭐") 30 else 15
-          items.add(
+          updated.add(
             FallingItem(
               id = nextId++,
               lane = Random.nextInt(5),
@@ -119,29 +122,32 @@ fun GameEmojiScreen(
           )
         }
 
-        // Move items
-        val iterator = items.iterator()
-        while (iterator.hasNext()) {
-          val item = iterator.next()
-          item.yPercent += 0.035f
-
-          // Collision detection near bottom (yPercent between 0.85 and 0.95)
-          if (item.yPercent in 0.82f..0.96f && item.lane == basketLane) {
+        for (item in items) {
+          val nextY = item.yPercent + 0.017f
+          if (nextY in 0.82f..0.95f && item.lane == basketLane) {
             if (item.isBomb) {
-              HapticHelper.buzzer(context)
-              lives--
-              if (lives <= 0) {
-                isPlaying = false
-                isGameOver = true
-                onRecordResult(score, "$score pts atrapados", "Filtro Atrapa y Esquiva", score >= 300)
-              }
+              HapticHelper.vibrateOnly(context, 140L)
+              SoundHelper.playExplosion()
+              currentLives--
             } else {
-              HapticHelper.tap(context)
-              score += item.points
+              HapticHelper.vibrateOnly(context, 15L)
+              SoundHelper.playSuccess()
+              currentScore += item.points
             }
-            iterator.remove()
-          } else if (item.yPercent > 1.0f) {
-            iterator.remove()
+          } else if (nextY <= 1.0f) {
+            updated.add(item.copy(yPercent = nextY))
+          }
+        }
+
+        items = updated
+        score = currentScore
+        if (currentLives != lives) {
+          lives = currentLives
+          if (currentLives <= 0) {
+            isPlaying = false
+            isGameOver = true
+            SoundHelper.playBuzzer()
+            onRecordResult(currentScore, "$currentScore pts atrapados", "Atrapa y Esquiva", currentScore >= 300)
           }
         }
       }
@@ -155,21 +161,31 @@ fun GameEmojiScreen(
       .padding(16.dp),
     horizontalAlignment = Alignment.CenterHorizontally
   ) {
-    // Header
+    // Header with Mute Toggle
     Row(
       modifier = Modifier.fillMaxWidth(),
-      verticalAlignment = Alignment.CenterVertically
+      verticalAlignment = Alignment.CenterVertically,
+      horizontalArrangement = Arrangement.SpaceBetween
     ) {
-      IconButton(onClick = onBack, modifier = Modifier.testTag("back_button")) {
-        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver", tint = TextPrimary)
+      Row(verticalAlignment = Alignment.CenterVertically) {
+        IconButton(onClick = onBack, modifier = Modifier.testTag("back_button")) {
+          Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver", tint = TextPrimary)
+        }
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+          text = "Atrapa y Esquiva",
+          style = MaterialTheme.typography.titleLarge,
+          fontWeight = FontWeight.Bold,
+          color = TextPrimary
+        )
       }
-      Spacer(modifier = Modifier.width(8.dp))
-      Text(
-        text = "Atrapa y Esquiva Viral",
-        style = MaterialTheme.typography.titleLarge,
-        fontWeight = FontWeight.Bold,
-        color = TextPrimary
-      )
+      IconButton(onClick = { SoundHelper.toggleMute(context) }) {
+        Icon(
+          imageVector = if (isMuted) Icons.AutoMirrored.Filled.VolumeOff else Icons.AutoMirrored.Filled.VolumeUp,
+          contentDescription = if (isMuted) "Activar sonido" else "Silenciar sonido",
+          tint = if (isMuted) NeonPink else NeonCyan
+        )
+      }
     }
 
     Spacer(modifier = Modifier.height(12.dp))
@@ -195,8 +211,8 @@ fun GameEmojiScreen(
 
     Spacer(modifier = Modifier.height(12.dp))
 
-    // Game Board Canvas (5 vertical lanes)
-    Box(
+    // Game Board Canvas (Single optimized 5-lane layout using graphicsLayer)
+    BoxWithConstraints(
       modifier = Modifier
         .fillMaxWidth()
         .weight(1f)
@@ -204,64 +220,37 @@ fun GameEmojiScreen(
         .background(SurfaceDark)
         .border(2.dp, SurfaceVariantDark, RoundedCornerShape(20.dp))
     ) {
-      // 5 Lane columns indicator
-      Row(modifier = Modifier.fillMaxSize()) {
-        for (i in 0..4) {
-          Box(
-            modifier = Modifier
-              .weight(1f)
-              .fillMaxHeight()
-              .border(0.5.dp, Color(0xFF1E2132))
-              .clickable {
-                if (isPlaying) {
-                  HapticHelper.click(context)
-                  basketLane = i
-                }
-              }
-          )
-        }
-      }
+      val boardHeightPx = with(LocalDensity.current) { (maxHeight - 44.dp).toPx() }
 
-      // Render Falling items
-      items.forEach { item ->
-        val laneFraction = (item.lane + 0.5f) / 5f
-        Box(
-          modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 4.dp),
-          contentAlignment = Alignment.TopStart
-        ) {
-          Box(
-            modifier = Modifier
-              .align(Alignment.TopStart)
-              .fillMaxWidth(fraction = 0.2f)
-              .padding(start = ((item.lane * 0.2f) * 300).dp) // approximate layout
-          )
-        }
-      }
-
-      // Simplified rendering: 5 Columns with vertical positioning
       Row(modifier = Modifier.fillMaxSize()) {
         for (laneIdx in 0..4) {
           Box(
             modifier = Modifier
               .weight(1f)
               .fillMaxHeight()
-              .clickable {
-                if (isPlaying) {
-                  HapticHelper.click(context)
+              .border(0.5.dp, Color(0xFF1E2132))
+              .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null
+              ) {
+                if (isPlaying && basketLane != laneIdx) {
+                  HapticHelper.tap(context)
                   basketLane = laneIdx
                 }
               }
           ) {
-            // Draw items in this lane
-            items.filter { it.lane == laneIdx }.forEach { falling ->
-              Box(
-                modifier = Modifier
-                  .align(Alignment.TopCenter)
-                  .padding(top = (falling.yPercent * 340).dp)
-              ) {
-                Text(text = falling.emoji, fontSize = 26.sp)
+            // Draw falling items in this lane using graphicsLayer (zero layout thrashing)
+            items.forEach { falling ->
+              if (falling.lane == laneIdx) {
+                Box(
+                  modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .graphicsLayer {
+                      translationY = falling.yPercent * boardHeightPx
+                    }
+                ) {
+                  Text(text = falling.emoji, fontSize = 26.sp)
+                }
               }
             }
 
@@ -299,7 +288,7 @@ fun GameEmojiScreen(
               color = TextPrimary,
               fontWeight = FontWeight.SemiBold,
               fontSize = 14.sp,
-              textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+              textAlign = TextAlign.Center,
               modifier = Modifier.padding(horizontal = 24.dp)
             )
           }

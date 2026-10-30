@@ -1,0 +1,6 @@
+{
+  "summary":  "Plan de implementación para eliminar Coach Gemini, simplificar el inicio de sesión con guardado automático, integrar efectos de sonido con botón para silenciar, agregar animaciones fluidas, optimizar el rendimiento contra el lag, limpiar textos innecesarios y asegurar la compilación limpia en GitHub Actions.",
+  "updatedAt":  "2026-10-30T02:06:06.544929087Z",
+  "requestFeedback":  true,
+  "userFacing":  true
+}

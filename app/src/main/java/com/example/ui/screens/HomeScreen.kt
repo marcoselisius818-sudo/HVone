@@ -18,17 +18,19 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.EmojiEvents
-import androidx.compose.material.icons.filled.FlashOn
+import androidx.compose.material.icons.automirrored.filled.VolumeOff
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -39,11 +41,11 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.data.local.UserProfileEntity
 import com.example.data.model.GameType
 import com.example.ui.theme.ElectricGold
 import com.example.ui.theme.ElectricGreen
-import com.example.ui.theme.MagentaGlow
 import com.example.ui.theme.NeonCyan
 import com.example.ui.theme.NeonPink
 import com.example.ui.theme.SurfaceDark
@@ -52,6 +54,7 @@ import com.example.ui.theme.TextMuted
 import com.example.ui.theme.TextPrimary
 import com.example.ui.theme.TextSecondary
 import com.example.ui.util.HapticHelper
+import com.example.ui.util.SoundHelper
 import com.example.ui.viewmodel.AppScreen
 
 @Composable
@@ -62,6 +65,7 @@ fun HomeScreen(
 ) {
   val context = LocalContext.current
   val user = profile ?: UserProfileEntity()
+  val isMuted by SoundHelper.isMuted.collectAsStateWithLifecycle()
 
   LazyColumn(
     modifier = Modifier
@@ -72,7 +76,7 @@ fun HomeScreen(
   ) {
     item {
       Spacer(modifier = Modifier.height(6.dp))
-      // User Profile Header
+      // User Profile Header + Global Mute Toggle
       Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -80,7 +84,10 @@ fun HomeScreen(
       ) {
         Row(
           verticalAlignment = Alignment.CenterVertically,
-          modifier = Modifier.clickable { onNavigateTo(AppScreen.PROFILE) }
+          modifier = Modifier.clickable {
+            HapticHelper.click(context)
+            onNavigateTo(AppScreen.PROFILE)
+          }
         ) {
           Box(
             modifier = Modifier
@@ -109,14 +116,17 @@ fun HomeScreen(
           }
         }
 
-        // Streak & Diamonds
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        // Streak, Diamonds & Sound Mute Toggle
+        Row(
+          horizontalArrangement = Arrangement.spacedBy(6.dp),
+          verticalAlignment = Alignment.CenterVertically
+        ) {
           Box(
             modifier = Modifier
               .clip(RoundedCornerShape(12.dp))
               .background(SurfaceDark)
               .border(1.dp, Color(0xFF2C2F44), RoundedCornerShape(12.dp))
-              .padding(horizontal = 10.dp, vertical = 6.dp)
+              .padding(horizontal = 9.dp, vertical = 6.dp)
           ) {
             Text(text = "🔥 ${user.streakDays}d", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = ElectricGold)
           }
@@ -125,9 +135,25 @@ fun HomeScreen(
               .clip(RoundedCornerShape(12.dp))
               .background(SurfaceDark)
               .border(1.dp, Color(0xFF2C2F44), RoundedCornerShape(12.dp))
-              .padding(horizontal = 10.dp, vertical = 6.dp)
+              .padding(horizontal = 9.dp, vertical = 6.dp)
           ) {
             Text(text = "💎 ${user.diamonds}", fontWeight = FontWeight.Bold, fontSize = 12.sp, color = NeonCyan)
+          }
+          IconButton(
+            onClick = { SoundHelper.toggleMute(context) },
+            modifier = Modifier
+              .size(38.dp)
+              .clip(CircleShape)
+              .background(SurfaceDark)
+              .border(1.dp, if (isMuted) NeonPink else NeonCyan, CircleShape)
+              .testTag("toggle_sound_button")
+          ) {
+            Icon(
+              imageVector = if (isMuted) Icons.AutoMirrored.Filled.VolumeOff else Icons.AutoMirrored.Filled.VolumeUp,
+              contentDescription = if (isMuted) "Activar sonido" else "Silenciar sonido",
+              tint = if (isMuted) NeonPink else NeonCyan,
+              modifier = Modifier.size(18.dp)
+            )
           }
         }
       }
@@ -287,7 +313,7 @@ fun HomeScreen(
         badge = "🔢 NÚMEROS",
         badgeColor = ElectricGold,
         onPlaySolo = { onStartGame(GameType.GUESS_NUMBER, false) },
-        onPlayDuel = { onStartGame(GameType.GUESS_NUMBER, true) }
+        onPlayDuel = null
       )
     }
 
@@ -311,6 +337,52 @@ fun HomeScreen(
         onPlaySolo = { onStartGame(GameType.TAP_BATTLE, false) },
         onPlayDuel = { onStartGame(GameType.TAP_BATTLE, true) }
       )
+    }
+
+    // Mini-game 6: Stroop & Atrapa y Esquiva Quick Cards
+    item {
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
+      ) {
+        Card(
+          colors = CardDefaults.cardColors(containerColor = SurfaceDark),
+          shape = RoundedCornerShape(16.dp),
+          modifier = Modifier
+            .weight(1f)
+            .border(1.dp, Color(0xFF262A3E), RoundedCornerShape(16.dp))
+            .clickable {
+              HapticHelper.click(context)
+              onNavigateTo(AppScreen.GAME_COLOR_SOLO)
+            }
+        ) {
+          Column(modifier = Modifier.padding(14.dp)) {
+            Text(text = "🧠", fontSize = 26.sp)
+            Spacer(modifier = Modifier.height(6.dp))
+            Text(text = "Reflejo Stroop", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = TextPrimary)
+            Text(text = "Toca el color real", fontSize = 11.sp, color = TextSecondary)
+          }
+        }
+
+        Card(
+          colors = CardDefaults.cardColors(containerColor = SurfaceDark),
+          shape = RoundedCornerShape(16.dp),
+          modifier = Modifier
+            .weight(1f)
+            .border(1.dp, Color(0xFF262A3E), RoundedCornerShape(16.dp))
+            .clickable {
+              HapticHelper.click(context)
+              onNavigateTo(AppScreen.GAME_EMOJI_SOLO)
+            }
+        ) {
+          Column(modifier = Modifier.padding(14.dp)) {
+            Text(text = "🧺", fontSize = 26.sp)
+            Spacer(modifier = Modifier.height(6.dp))
+            Text(text = "Atrapa Gemas", fontWeight = FontWeight.Bold, fontSize = 14.sp, color = TextPrimary)
+            Text(text = "Esquiva las bombas", fontSize = 11.sp, color = TextSecondary)
+          }
+        }
+      }
     }
 
     item {
@@ -385,7 +457,11 @@ private fun GameHubItem(
           shape = RoundedCornerShape(12.dp),
           colors = ButtonDefaults.buttonColors(containerColor = SurfaceVariantDark, contentColor = TextPrimary)
         ) {
-          Text("Solo Récord", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+          Text(
+            if (onPlayDuel != null) "Modo Individual" else "¡Jugar Ahora!",
+            fontWeight = FontWeight.Bold,
+            fontSize = 12.sp
+          )
         }
 
         if (onPlayDuel != null) {

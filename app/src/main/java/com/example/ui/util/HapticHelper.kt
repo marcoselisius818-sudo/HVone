@@ -8,10 +8,14 @@ import android.os.VibratorManager
 
 object HapticHelper {
   fun click(context: Context) {
+    SoundHelper.init(context)
+    SoundHelper.playClick()
     vibrate(context, 20L)
   }
 
   fun success(context: Context) {
+    SoundHelper.init(context)
+    SoundHelper.playSuccess()
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
       val vibrator = getVibrator(context)
       val timings = longArrayOf(0, 40, 60, 80)
@@ -23,11 +27,19 @@ object HapticHelper {
   }
 
   fun buzzer(context: Context) {
+    SoundHelper.init(context)
+    SoundHelper.playBuzzer()
     vibrate(context, 150L)
   }
 
   fun tap(context: Context) {
+    SoundHelper.init(context)
+    SoundHelper.playTap()
     vibrate(context, 12L)
+  }
+
+  fun vibrateOnly(context: Context, milliseconds: Long = 15L) {
+    vibrate(context, milliseconds)
   }
 
   private fun vibrate(context: Context, milliseconds: Long) {

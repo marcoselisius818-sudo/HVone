@@ -1,11 +1,10 @@
 package com.example.ui.screens
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -13,14 +12,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.automirrored.filled.VolumeOff
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -43,7 +42,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
@@ -51,21 +49,22 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.ui.theme.ElectricGold
 import com.example.ui.theme.ElectricGreen
 import com.example.ui.theme.NeonCyan
 import com.example.ui.theme.NeonPink
 import com.example.ui.theme.SurfaceDark
-import com.example.ui.theme.SurfaceVariantDark
-import com.example.ui.theme.TextMuted
 import com.example.ui.theme.TextPrimary
 import com.example.ui.theme.TextSecondary
 import com.example.ui.util.HapticHelper
+import com.example.ui.util.SoundHelper
+import kotlin.math.abs
 import kotlin.random.Random
 
 data class GuessAttempt(
   val number: Int,
-  val hint: String, // "Mayor ⬆️" or "Menor ⬇️" or "¡Correcto! 🎯"
+  val hint: String,
   val isCorrect: Boolean
 )
 
@@ -76,11 +75,12 @@ fun GameGuessNumberScreen(
 ) {
   BackHandler { onBack() }
   val context = LocalContext.current
+  val isMuted by SoundHelper.isMuted.collectAsStateWithLifecycle()
 
   var maxRange by remember { mutableIntStateOf(100) }
   var secretNumber by remember { mutableIntStateOf(Random.nextInt(1, maxRange + 1)) }
   var inputGuess by remember { mutableStateOf("") }
-  var attempts = remember { mutableStateListOf<GuessAttempt>() }
+  val attempts = remember { mutableStateListOf<GuessAttempt>() }
   var isWon by remember { mutableStateOf(false) }
   var hintText by remember { mutableStateOf("Ingresa un número del 1 al $maxRange") }
 
@@ -100,21 +100,31 @@ fun GameGuessNumberScreen(
       .padding(16.dp),
     horizontalAlignment = Alignment.CenterHorizontally
   ) {
-    // Header
+    // Header with Mute Toggle
     Row(
       modifier = Modifier.fillMaxWidth(),
-      verticalAlignment = Alignment.CenterVertically
+      verticalAlignment = Alignment.CenterVertically,
+      horizontalArrangement = Arrangement.SpaceBetween
     ) {
-      IconButton(onClick = onBack, modifier = Modifier.testTag("back_button")) {
-        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver", tint = TextPrimary)
+      Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+        IconButton(onClick = onBack, modifier = Modifier.testTag("back_button")) {
+          Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver", tint = TextPrimary)
+        }
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+          text = "Adivina el Número Secreto",
+          style = MaterialTheme.typography.titleLarge,
+          fontWeight = FontWeight.Bold,
+          color = TextPrimary
+        )
       }
-      Spacer(modifier = Modifier.width(8.dp))
-      Text(
-        text = "Adivina el Número Secreto",
-        style = MaterialTheme.typography.titleLarge,
-        fontWeight = FontWeight.Bold,
-        color = TextPrimary
-      )
+      IconButton(onClick = { SoundHelper.toggleMute(context) }) {
+        Icon(
+          imageVector = if (isMuted) Icons.AutoMirrored.Filled.VolumeOff else Icons.AutoMirrored.Filled.VolumeUp,
+          contentDescription = if (isMuted) "Activar sonido" else "Silenciar sonido",
+          tint = if (isMuted) NeonPink else NeonCyan
+        )
+      }
     }
 
     Spacer(modifier = Modifier.height(10.dp))
@@ -157,7 +167,8 @@ fun GameGuessNumberScreen(
       shape = RoundedCornerShape(20.dp),
       modifier = Modifier
         .fillMaxWidth()
-        .border(1.dp, Color(0xFF282C40), RoundedCornerShape(20.dp))
+        .border(1.dp, if (isWon) ElectricGreen else Color(0xFF282C40), RoundedCornerShape(20.dp))
+        .animateContentSize()
     ) {
       Column(
         modifier = Modifier.padding(18.dp),
@@ -212,9 +223,10 @@ fun GameGuessNumberScreen(
             val guess = inputGuess.toIntOrNull()
             if (guess != null && guess in 1..maxRange) {
               inputGuess = ""
-              val diff = Math.abs(secretNumber - guess)
+              val diff = abs(secretNumber - guess)
               if (guess == secretNumber) {
-                HapticHelper.success(context)
+                HapticHelper.vibrateOnly(context, 90L)
+                SoundHelper.playVictory()
                 isWon = true
                 attempts.add(0, GuessAttempt(guess, "¡CORRECTO! 🎯", true))
                 val baseScore = when (maxRange) {
@@ -231,12 +243,14 @@ fun GameGuessNumberScreen(
                 val score = (baseScore - attempts.size * penaltyPerAttempt).coerceAtLeast(150)
                 onRecordResult(score, "Adivinó el $secretNumber (Rango 1-$maxRange) en ${attempts.size} intentos", "Adivina el Número", true)
               } else if (guess < secretNumber) {
-                HapticHelper.tap(context)
+                HapticHelper.vibrateOnly(context, 20L)
+                SoundHelper.playHintHigher()
                 val extraHint = if (maxRange >= 1000 && diff > 500) " (Mucho más alto 🚀)" else if (diff <= 25) " (¡Muy cerca! 🔥)" else ""
                 hintText = "¡El número secreto es MAYOR que $guess! ⬆️$extraHint"
                 attempts.add(0, GuessAttempt(guess, "Es MAYOR ⬆️$extraHint", false))
               } else {
-                HapticHelper.tap(context)
+                HapticHelper.vibrateOnly(context, 20L)
+                SoundHelper.playHintLower()
                 val extraHint = if (maxRange >= 1000 && diff > 500) " (Mucho más bajo ❄️)" else if (diff <= 25) " (¡Muy cerca! 🔥)" else ""
                 hintText = "¡El número secreto es MENOR que $guess! ⬇️$extraHint"
                 attempts.add(0, GuessAttempt(guess, "Es MENOR ⬇️$extraHint", false))
@@ -282,7 +296,7 @@ fun GameGuessNumberScreen(
       modifier = Modifier.weight(1f),
       verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-      items(attempts) { att ->
+      itemsIndexed(attempts, key = { index, item -> "${index}_${item.number}" }) { _, att ->
         Card(
           colors = CardDefaults.cardColors(
             containerColor = if (att.isCorrect) Color(0xFF162E20) else SurfaceDark

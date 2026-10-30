@@ -23,22 +23,40 @@ private const val TAG = "AuthHelper"
 private const val WEB_CLIENT_ID_RES = "default_web_client_id"
 
 object AuthHelper {
+  fun getSignedInAccountLabel(context: Context): String? {
+    return try {
+      if (FirebaseApp.getApps(context).isEmpty()) return null
+      val user = Firebase.auth.currentUser ?: return null
+      user.email?.takeIf { it.isNotBlank() }
+        ?: user.displayName?.takeIf { it.isNotBlank() }
+        ?: "Cuenta de Google conectada"
+    } catch (_: Exception) {
+      null
+    }
+  }
+
   fun onGoogleSignInClicked(
     context: Context,
     scope: CoroutineScope,
-    onAuthSuccess: () -> Unit,
+    onAuthSuccess: (String) -> Unit,
     onAuthError: (String) -> Unit,
     onAuthCancelled: () -> Unit = {}
   ) {
     val clientId = try {
       val resId = context.resources.getIdentifier(WEB_CLIENT_ID_RES, "string", context.packageName)
       if (resId != 0) context.getString(resId) else ""
-    } catch (e: Exception) {
+    } catch (_: Exception) {
       ""
     }
 
     if (clientId.isBlank()) {
-      onAuthError("Configuración de Google no encontrada: default_web_client_id")
+      onAuthError("No se pudo iniciar sesión con Google en este momento. Tus datos siguen guardados en tu dispositivo.")
+      return
+    }
+
+    val activity = context as? Activity
+    if (activity == null) {
+      onAuthError("No se pudo abrir la ventana de inicio de sesión.")
       return
     }
 
@@ -48,23 +66,24 @@ object AuthHelper {
 
     scope.launch {
       try {
-        val result = credentialManager.getCredential(context as Activity, request)
+        val result = credentialManager.getCredential(activity, request)
         val credential = result.credential
         if (credential is CustomCredential && credential.type == TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
           val googleIdToken = GoogleIdTokenCredential.createFrom(credential.data).idToken
           val authCredential = GoogleAuthProvider.getCredential(googleIdToken, null)
           Firebase.auth.signInWithCredential(authCredential).await()
-          Log.d(TAG, "Inicio de sesión con Google exitoso: ${Firebase.auth.currentUser?.email}")
-          onAuthSuccess()
+          val label = getSignedInAccountLabel(context) ?: "Cuenta de Google"
+          Log.d(TAG, "Inicio de sesión con Google exitoso: $label")
+          onAuthSuccess(label)
         } else {
-          onAuthError("Tipo de credencial no reconocido")
+          onAuthError("No se pudo verificar la cuenta seleccionada.")
         }
       } catch (e: GetCredentialCancellationException) {
-        Log.w(TAG, "Inicio de sesión con Google cancelado por el usuario", e)
+        Log.w(TAG, "Inicio de sesión cancelado por el usuario", e)
         onAuthCancelled()
       } catch (e: Exception) {
         Log.e(TAG, "Fallo al iniciar sesión con Google", e)
-        onAuthError(e.localizedMessage ?: "Error al conectar con Google")
+        onAuthError("No se pudo conectar con Google. Tus datos siguen guardados en este dispositivo.")
       }
     }
   }
@@ -80,7 +99,7 @@ object AuthHelper {
         Firebase.auth.signOut()
       }
     } catch (e: Exception) {
-      Log.e(TAG, "Error al cerrar sesión en Firebase", e)
+      Log.e(TAG, "Error al cerrar sesión", e)
     }
     scope.launch {
       try {

@@ -25,6 +25,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.VolumeOff
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Stop
@@ -58,6 +60,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.data.model.GameType
 import com.example.ui.theme.ElectricGold
 import com.example.ui.theme.ElectricGreen
@@ -70,6 +73,7 @@ import com.example.ui.theme.TextMuted
 import com.example.ui.theme.TextPrimary
 import com.example.ui.theme.TextSecondary
 import com.example.ui.util.HapticHelper
+import com.example.ui.util.SoundHelper
 import kotlinx.coroutines.delay
 import java.util.Locale
 import kotlin.math.abs
@@ -116,13 +120,20 @@ private fun Game10sSoloView(
   LaunchedEffect(isRunning) {
     if (isRunning) {
       startTime = SystemClock.elapsedRealtime()
+      var lastWholeSec = 0
       while (isRunning) {
         elapsedTime = SystemClock.elapsedRealtime() - startTime
+        val wholeSec = (elapsedTime / 1000L).toInt()
+        if (wholeSec > lastWholeSec && wholeSec <= 5) {
+          lastWholeSec = wholeSec
+          SoundHelper.playTick(urgency = wholeSec * 0.15f)
+        }
         delay(16) // ~60fps
       }
     }
   }
 
+  val isMuted by SoundHelper.isMuted.collectAsStateWithLifecycle()
   val displaySeconds = elapsedTime / 1000f
   val isBlind = isRunning && elapsedTime >= 5000L
 
@@ -133,8 +144,8 @@ private fun Game10sSoloView(
   } else 0
 
   val rankTitle = when {
-    diffMs <= 25 -> "👑 ¡DIOS DE TIKTOK!"
-    diffMs <= 80 -> "🔥 ¡VIRAL MAESTRO!"
+    diffMs <= 25 -> "👑 ¡LEYENDA EXACTA!"
+    diffMs <= 80 -> "🔥 ¡PRECISIÓN MAESTRA!"
     diffMs <= 200 -> "⚡ ¡OJO DE HALCÓN!"
     diffMs <= 500 -> "✨ ¡MUY CERCA!"
     else -> "😅 ¡SIGUE PRACTICANDO!"
@@ -150,25 +161,35 @@ private fun Game10sSoloView(
     // Top Bar
     Row(
       modifier = Modifier.fillMaxWidth(),
-      verticalAlignment = Alignment.CenterVertically
+      verticalAlignment = Alignment.CenterVertically,
+      horizontalArrangement = Arrangement.SpaceBetween
     ) {
-      IconButton(
-        onClick = onBack,
-        modifier = Modifier.testTag("back_button")
-      ) {
-        Icon(
-          imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-          contentDescription = "Volver",
-          tint = TextPrimary
+      Row(verticalAlignment = Alignment.CenterVertically) {
+        IconButton(
+          onClick = onBack,
+          modifier = Modifier.testTag("back_button")
+        ) {
+          Icon(
+            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+            contentDescription = "Volver",
+            tint = TextPrimary
+          )
+        }
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+          text = "Reto 10.00s",
+          style = MaterialTheme.typography.titleLarge,
+          fontWeight = FontWeight.Bold,
+          color = TextPrimary
         )
       }
-      Spacer(modifier = Modifier.width(8.dp))
-      Text(
-        text = "Reto Viral 10.00s",
-        style = MaterialTheme.typography.titleLarge,
-        fontWeight = FontWeight.Bold,
-        color = TextPrimary
-      )
+      IconButton(onClick = { SoundHelper.toggleMute(context) }) {
+        Icon(
+          imageVector = if (isMuted) Icons.AutoMirrored.Filled.VolumeOff else Icons.AutoMirrored.Filled.VolumeUp,
+          contentDescription = if (isMuted) "Activar sonido" else "Silenciar sonido",
+          tint = if (isMuted) NeonPink else NeonCyan
+        )
+      }
     }
 
     Spacer(modifier = Modifier.height(16.dp))
