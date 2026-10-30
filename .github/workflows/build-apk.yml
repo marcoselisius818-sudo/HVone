@@ -2,9 +2,9 @@ name: Generar APK Android
 
 on:
   push:
-    branches: [ "*" ]
+    branches: [ "**" ]
   pull_request:
-    branches: [ "*" ]
+    branches: [ "**" ]
   workflow_dispatch:
 
 permissions:
@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   build-apk:
-    name: Compilar TikTok Party APK
+    name: Compilar APK
     runs-on: ubuntu-latest
 
     steps:
@@ -25,13 +25,17 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
-      - name: Configurar Android SDK
-        uses: android-actions/setup-android@v3
-
       - name: Aceptar licencias de Android SDK
-        run: yes | sdkmanager --licenses || true
+        run: |
+          mkdir -p "$ANDROID_HOME/licenses" || true
+          echo "24333f8a63b6825ea9c5514f83c2829b004d1fee" >> "$ANDROID_HOME/licenses/android-sdk-license"
+          echo "d56f5187479451eabf01fb78af6dfcb131a6481e" >> "$ANDROID_HOME/licenses/android-sdk-license"
+          echo "84831b9409646a233e85847d06e23b2024f0c69b" >> "$ANDROID_HOME/licenses/android-sdk-preview-license"
+          if [ -d "$ANDROID_HOME/cmdline-tools/latest/bin" ]; then
+            yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses || true
+          fi
 
-      - name: Preparar archivo .env y Keystore de firmado
+      - name: Preparar archivo .env y Keystore
         run: |
           if [ ! -f .env ]; then
             cp .env.example .env
@@ -42,17 +46,18 @@ jobs:
             keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
           fi
 
-      - name: Configurar Gradle 9.3.1
+      - name: Configurar Gradle
         uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '9.3.1'
 
-      - name: Compilar APK (Debug instalable)
-        run: gradle assembleDebug --no-daemon
+      - name: Otorgar permisos de ejecución a gradlew
+        run: chmod +x gradlew
+
+      - name: Compilar APK (Debug)
+        run: ./gradlew assembleDebug --no-daemon
 
       - name: Subir APK listo para descargar (Artifacts)
         uses: actions/upload-artifact@v4
         with:
           name: TikTok-Party-APK
-          path: app/build/outputs/apk/debug/app-debug.apk
+          path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
