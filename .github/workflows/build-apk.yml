@@ -46,14 +46,19 @@ jobs:
             keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
           fi
 
-      - name: Configurar Gradle
+      - name: Configurar Gradle 9.3.1
         uses: gradle/actions/setup-gradle@v4
-
-      - name: Otorgar permisos de ejecución a gradlew
-        run: chmod +x gradlew
+        with:
+          gradle-version: '9.3.1'
 
       - name: Compilar APK (Debug)
-        run: ./gradlew assembleDebug --no-daemon
+        run: |
+          if [ -f ./gradlew ]; then
+            chmod +x ./gradlew
+            ./gradlew assembleDebug --no-daemon --stacktrace
+          else
+            gradle assembleDebug --no-daemon --stacktrace
+          fi
 
       - name: Subir APK listo para descargar (Artifacts)
         uses: actions/upload-artifact@v4

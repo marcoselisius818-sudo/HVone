@@ -8,11 +8,11 @@ import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.exceptions.GetCredentialCancellationException
-import com.example.R
 import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential.Companion.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
 import com.google.firebase.Firebase
+import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.auth
 import kotlinx.coroutines.CoroutineScope
@@ -20,6 +20,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
 private const val TAG = "AuthHelper"
+private const val WEB_CLIENT_ID_RES = "default_web_client_id"
 
 object AuthHelper {
   fun onGoogleSignInClicked(
@@ -30,8 +31,13 @@ object AuthHelper {
     onAuthCancelled: () -> Unit = {}
   ) {
     val clientId = try {
-      context.getString(R.string.default_web_client_id)
+      val resId = context.resources.getIdentifier(WEB_CLIENT_ID_RES, "string", context.packageName)
+      if (resId != 0) context.getString(resId) else ""
     } catch (e: Exception) {
+      ""
+    }
+
+    if (clientId.isBlank()) {
       onAuthError("Configuración de Google no encontrada: default_web_client_id")
       return
     }
@@ -69,7 +75,13 @@ object AuthHelper {
     onSignOutComplete: () -> Unit
   ) {
     val credentialManager = CredentialManager.create(context)
-    Firebase.auth.signOut()
+    try {
+      if (FirebaseApp.getApps(context).isNotEmpty()) {
+        Firebase.auth.signOut()
+      }
+    } catch (e: Exception) {
+      Log.e(TAG, "Error al cerrar sesión en Firebase", e)
+    }
     scope.launch {
       try {
         credentialManager.clearCredentialState(ClearCredentialStateRequest())

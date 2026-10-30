@@ -2,9 +2,9 @@ package com.example.data.cloud
 
 import android.content.Context
 import android.util.Log
-import com.example.R
 import com.example.data.local.UserProfileEntity
 import com.google.firebase.Firebase
+import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
@@ -12,19 +12,29 @@ import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.tasks.await
 
 private const val TAG = "FirestoreSync"
+private const val FIRESTORE_DB_ID_RES = "firestore_database_id"
 
 class FirestoreSyncManager(private val context: Context) {
   private val db: FirebaseFirestore by lazy {
-    val dbId = context.getString(R.string.firestore_database_id)
-    FirebaseFirestore.getInstance(dbId)
+    val resId = context.resources.getIdentifier(FIRESTORE_DB_ID_RES, "string", context.packageName)
+    val dbId = if (resId != 0) context.getString(resId) else ""
+    if (dbId.isNotBlank()) {
+      FirebaseFirestore.getInstance(dbId)
+    } else {
+      FirebaseFirestore.getInstance()
+    }
   }
 
   suspend fun syncUserProfileToCloud(profile: UserProfileEntity): Result<Unit> {
-    val currentUser = Firebase.auth.currentUser ?: return Result.failure(
-      IllegalStateException("Usuario no autenticado con Google.")
-    )
-
     return try {
+      if (FirebaseApp.getApps(context).isEmpty()) {
+        return Result.failure(IllegalStateException("Firebase no está configurado en este dispositivo."))
+      }
+
+      val currentUser = Firebase.auth.currentUser ?: return Result.failure(
+        IllegalStateException("Usuario no autenticado con Google.")
+      )
+
       val uid = currentUser.uid
       val userDoc = db.collection("users").document(uid)
 
