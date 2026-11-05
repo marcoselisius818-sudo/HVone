@@ -161,6 +161,7 @@ fun LeaderboardScreen(
 
     // Tabs: HOY, SEMANAL, HISTÓRICO
     item {
+      val context = androidx.compose.ui.platform.LocalContext.current
       val periods = listOf("HOY", "SEMANAL", "HISTORICO")
       val selectedIndex = periods.indexOf(selectedPeriod).coerceAtLeast(0)
 
@@ -184,7 +185,10 @@ fun LeaderboardScreen(
           }
           Tab(
             selected = selectedIndex == index,
-            onClick = { onSelectPeriod(period) },
+            onClick = {
+              com.example.ui.util.HapticHelper.click(context)
+              onSelectPeriod(period)
+            },
             text = {
               Text(
                 text = label,

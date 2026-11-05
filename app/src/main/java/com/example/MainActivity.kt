@@ -54,6 +54,7 @@ import com.example.ui.screens.GameColorScreen
 import com.example.ui.screens.GameEmojiScreen
 import com.example.ui.screens.GameGuessNumberScreen
 import com.example.ui.screens.GameHeadsUpScreen
+import com.example.ui.screens.GameImpostorScreen
 import com.example.ui.screens.GameTapScreen
 import com.example.ui.screens.HomeScreen
 import com.example.ui.screens.LeaderboardScreen
@@ -70,6 +71,7 @@ import com.example.ui.theme.TextPrimary
 import com.example.ui.theme.TextSecondary
 import com.example.ui.util.AuthHelper
 import com.example.ui.util.HapticHelper
+import com.example.ui.util.PlayerRosterManager
 import com.example.ui.util.configureAppCheck
 import com.example.ui.viewmodel.AppScreen
 import com.example.ui.viewmodel.MainViewModel
@@ -106,8 +108,10 @@ fun TikTokGamesApp(viewModel: MainViewModel = viewModel()) {
   val signedInAccount by viewModel.signedInAccount.collectAsStateWithLifecycle()
   val syncStatus by viewModel.syncStatus.collectAsStateWithLifecycle()
 
-  var customP1Name by remember { mutableStateOf("Tú") }
-  var customP2Name by remember { mutableStateOf("Rival") }
+  val savedDuelPair = remember { PlayerRosterManager.getDuelPlayers(context, "Tú") }
+  var customP1Name by remember { mutableStateOf(savedDuelPair.first) }
+  var customP2Name by remember { mutableStateOf(savedDuelPair.second) }
+  var guessNumberPartyInitial by remember { mutableStateOf(false) }
   var activePlayingBracketMatch by remember { mutableStateOf<BracketMatch?>(null) }
 
   val showBottomNav = currentScreen in listOf(
@@ -268,12 +272,17 @@ fun TikTokGamesApp(viewModel: MainViewModel = viewModel()) {
               onNavigateTo = { viewModel.navigateTo(it) },
               onStartGame = { gameType, isDuel ->
                 val userNickname = userProfile?.nickname ?: "Tú"
-                customP1Name = userNickname
-                customP2Name = "Rival"
+                val duelPair = PlayerRosterManager.getDuelPlayers(context, userNickname)
+                customP1Name = duelPair.first
+                customP2Name = duelPair.second
                 when (gameType) {
                   GameType.BOMBA -> viewModel.navigateTo(AppScreen.GAME_BOMBA)
+                  GameType.IMPOSTOR -> viewModel.navigateTo(AppScreen.GAME_IMPOSTOR)
                   GameType.HEADS_UP -> viewModel.navigateTo(AppScreen.GAME_HEADS_UP)
-                  GameType.GUESS_NUMBER -> viewModel.navigateTo(AppScreen.GAME_GUESS_NUMBER)
+                  GameType.GUESS_NUMBER -> {
+                    guessNumberPartyInitial = isDuel
+                    viewModel.navigateTo(AppScreen.GAME_GUESS_NUMBER)
+                  }
                   GameType.STOP_10S -> viewModel.navigateTo(if (isDuel) AppScreen.GAME_10S_DUEL else AppScreen.GAME_10S_SOLO)
                   GameType.TAP_BATTLE -> viewModel.navigateTo(if (isDuel) AppScreen.GAME_TAP_DUEL else AppScreen.GAME_TAP_SOLO)
                 }
@@ -288,6 +297,22 @@ fun TikTokGamesApp(viewModel: MainViewModel = viewModel()) {
               onRecordResult = { score, detail, opponent, isWin ->
                 viewModel.recordMatch(
                   gameType = GameType.BOMBA,
+                  score = score,
+                  scoreDetail = detail,
+                  opponentName = opponent,
+                  isWin = isWin
+                )
+              }
+            )
+          }
+
+          AppScreen.GAME_IMPOSTOR -> {
+            GameImpostorScreen(
+              initialPlayerName = userProfile?.nickname ?: "Jugador 1",
+              onBack = { viewModel.navigateBack() },
+              onRecordResult = { score, detail, opponent, isWin ->
+                viewModel.recordMatch(
+                  gameType = GameType.IMPOSTOR,
                   score = score,
                   scoreDetail = detail,
                   opponentName = opponent,
@@ -314,6 +339,7 @@ fun TikTokGamesApp(viewModel: MainViewModel = viewModel()) {
 
           AppScreen.GAME_GUESS_NUMBER -> {
             GameGuessNumberScreen(
+              isPartyModeInitial = guessNumberPartyInitial,
               onBack = { viewModel.navigateBack() },
               onRecordResult = { score, detail, opponent, isWin ->
                 viewModel.recordMatch(

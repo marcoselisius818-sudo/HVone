@@ -66,7 +66,9 @@ import com.example.ui.theme.TextPrimary
 import com.example.ui.theme.TextSecondary
 import com.example.ui.util.HapticHelper
 import com.example.ui.util.SoundHelper
+import com.example.ui.util.WordHistoryManager
 import kotlinx.coroutines.delay
+import kotlin.random.Random
 
 data class HeadsUpTheme(
   val id: String,
@@ -75,20 +77,29 @@ data class HeadsUpTheme(
   val words: List<String>
 )
 
+private val BaseNumbers1To5000: List<String> = buildList {
+  addAll(
+    listOf(
+      "1", "2", "3", "4", "5", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18",
+      "21", "24", "25", "30", "33", "40", "42", "45", "50", "60", "69", "70", "77", "80", "88", "90",
+      "99", "100", "111", "150", "200", "250", "300", "333", "365", "404", "450", "500", "555", "600",
+      "666", "700", "750", "777", "800", "888", "900", "999", "1000", "1111", "1200", "1234", "1500",
+      "1750", "1999", "2000", "2024", "2025", "2026", "2222", "2500", "2750", "3000", "3333", "3500",
+      "4000", "4321", "4444", "4500", "4850", "4999", "5000"
+    )
+  )
+  // Also include intermediate milestones across 1..5000 so every number session feels fresh
+  for (n in 105..4955 step 65) {
+    add(n.toString())
+  }
+}.distinct()
+
 val HeadsUpThemes = listOf(
   HeadsUpTheme(
     id = "NUMBERS",
-    name = "Sólo Números",
+    name = "Sólo Números (1 al 5.000)",
     icon = "🔢",
-    words = listOf(
-      "7", "100", "2026", "50", "12", "99", "0", "1 millón",
-      "77", "18", "69", "24", "365", "10", "42", "3.14",
-      "21", "88", "13", "500", "1999", "33", "2000", "777",
-      "5000", "666", "1000", "404", "15", "8", "90", "2024",
-      "11", "300", "2500", "45", "16", "2", "5", "80",
-      "10000", "4", "30", "14", "9", "3", "1", "60",
-      "25", "17", "70", "40", "100K", "555", "1234"
-    )
+    words = BaseNumbers1To5000
   ),
   HeadsUpTheme(
     id = "MOVIES",
@@ -104,7 +115,10 @@ val HeadsUpThemes = listOf(
       "Interestelar", "Crepúsculo", "Shrek 2", "Intensamente", "Moana",
       "Encanto", "Bob Esponja", "Los Juegos del Hambre", "El Señor de los Anillos",
       "Cars (El Rayo McQueen)", "Monsters Inc", "Buscando a Nemo", "Up (Una Aventura de Altura)",
-      "Kung Fu Panda", "Madagascar", "Rocky", "Terminator", "El Juego del Calamar"
+      "Kung Fu Panda", "Madagascar", "Rocky", "Terminator", "El Juego del Calamar",
+      "Gladiador", "Deadpool", "Forrest Gump", "Ratatouille", "Lilo y Stitch",
+      "Mi Villano Favorito (Minions)", "Volver al Futuro", "E.T.", "Pulp Fiction",
+      "Juego de Tronos", "The Last of Us", "Dragon Ball Z", "Naruto", "One Piece"
     )
   ),
   HeadsUpTheme(
@@ -119,7 +133,8 @@ val HeadsUpThemes = listOf(
       "Rana", "Tortuga", "Perezoso", "Gorila", "Camello", "Zorro",
       "Mapache", "Erizo", "Gato", "Perro", "Vaca", "Ballena Azul",
       "Loro", "Cangrejo", "Hormiga", "Abeja", "Escorpión", "Guepardo",
-      "Oso Polar", "Cisne", "Hámster", "Medusa", "Pavo Real"
+      "Oso Polar", "Cisne", "Hámster", "Medusa", "Pavo Real",
+      "Ornitorrinco", "Capibara", "Ajolote", "Suricata", "Castor", "Calamar Gigante"
     )
   ),
   HeadsUpTheme(
@@ -135,7 +150,7 @@ val HeadsUpThemes = listOf(
       "Quesadilla", "Panqueques", "Flan", "Waffles", "Pizza con Piña",
       "Asado", "Salmón", "Pasta Carbonara", "Batido de Fresa", "Mojito",
       "Limonada", "Pollo Frito", "Tamal", "Alitas BBQ", "Brownie",
-      "Brownie con Helado", "Fondue de Queso"
+      "Brownie con Helado", "Fondue de Queso", "Tiramisú", "Chilaquiles", "Cachapa"
     )
   ),
   HeadsUpTheme(
@@ -151,7 +166,8 @@ val HeadsUpThemes = listOf(
       "Enhebrar una aguja", "Maquillarse", "Cambiar una llanta", "Volar como avión",
       "Ser atacado por abejas", "Estornudar fuerte", "Caminar como pingüino",
       "Comer comida muy picante", "Pisar una pieza de Lego", "Estar en una montaña rusa",
-      "Robar un banco", "Hipnotizar a alguien", "Fingir estar desmayado", "Perder el equilibrio"
+      "Robar un banco", "Hipnotizar a alguien", "Fingir estar desmayado", "Perder el equilibrio",
+      "Hacer malabares", "Caminar sobre fuego", "Buscar las llaves perdidas", "Cantar ópera"
     )
   ),
   HeadsUpTheme(
@@ -165,7 +181,8 @@ val HeadsUpThemes = listOf(
       "Auriculares inalámbricos", "Sartén", "Control remoto", "Lámpara",
       "Tijeras", "Cuaderno", "Billetera", "Maleta de viaje", "Microondas",
       "Candado", "Gorra", "Toalla", "Enchufe", "Encendedor", "Calculadora",
-      "Cepillo de dientes", "Ventilador", "Cámara de fotos", "Pilas", "Plancha"
+      "Cepillo de dientes", "Ventilador", "Cámara de fotos", "Pilas", "Plancha",
+      "Cortauñas", "Sacacorchos", "Linterna", "Aspiradora", "Licuadora", "Brújula"
     )
   ),
   HeadsUpTheme(
@@ -179,7 +196,7 @@ val HeadsUpThemes = listOf(
       "Lip sync", "Unboxing", "ASMR comiendo", "Dúo viral", "Challenge de baile",
       "NPC en vivo", "La queso", "Chefcito", "Cringe", "Viral en Para Ti (FYP)",
       "Fanum Tax", "Tuki", "Live de TikTok", "Room Tour", "Expectativa vs Realidad",
-      "Terapia de compras", "Prank a mi amigo", "Filtro de llanto"
+      "Terapia de compras", "Prank a mi amigo", "Filtro de llanto", "Aura +10000"
     )
   ),
   HeadsUpTheme(
@@ -192,7 +209,8 @@ val HeadsUpThemes = listOf(
       "AuronPlay", "Bizarrap", "Peso Pluma", "Daddy Yankee", "Dua Lipa",
       "Selena Gomez", "Dwayne The Rock", "Justin Bieber", "Will Smith",
       "Zendaya", "Tom Holland", "Karol G", "Feid", "Maluma", "Rauw Alejandro",
-      "Kylie Jenner", "Beyoncé", "Ariana Grande", "Kanye West", "Speed"
+      "Kylie Jenner", "Beyoncé", "Ariana Grande", "Kanye West", "Speed",
+      "Luisito Comunica", "Rubius", "Spreen", "Eminem", "Rihanna"
     )
   ),
   HeadsUpTheme(
@@ -204,7 +222,8 @@ val HeadsUpThemes = listOf(
       "Thor", "Capitán América", "Hulk", "Deadpool", "Wolverine",
       "Flash", "Joker", "Thanos", "Loki", "Black Panther", "Aquaman",
       "Venom", "Doctor Strange", "Robin", "Groot", "Magneto",
-      "Harley Quinn", "Miles Morales", "Carnage", "Capitana Marvel", "Linterna Verde"
+      "Harley Quinn", "Miles Morales", "Carnage", "Capitana Marvel", "Linterna Verde",
+      "Daredevil", "Homelander", "Omni-Man", "Gambit", "Cíclope"
     )
   ),
   HeadsUpTheme(
@@ -216,7 +235,8 @@ val HeadsUpThemes = listOf(
       "Estados Unidos", "Japón", "Brasil", "Italia", "Francia",
       "París", "Tokio", "Nueva York", "Roma", "Londres", "Buenos Aires",
       "Madrid", "Egipto", "Australia", "Canadá", "Alemania",
-      "Corea del Sur", "Machu Picchu", "Pirámides de Giza", "Miami", "Río de Janeiro"
+      "Corea del Sur", "Machu Picchu", "Pirámides de Giza", "Miami", "Río de Janeiro",
+      "Suiza", "Dubái", "Grecia", "Venecia", "Cancún", "Bariloche"
     )
   ),
   HeadsUpTheme(
@@ -228,7 +248,8 @@ val HeadsUpThemes = listOf(
       "Piloto de avión", "Detective privado", "Profesor de matemáticas", "Youtuber",
       "Dentista", "Fotógrafo", "Veterinario", "Abogado", "Electricista",
       "Albañil", "Dj de discoteca", "Azafata", "Payaso de circo", "Mecánico",
-      "Juez", "Arquitecto", "Peluquero", "Buzo profesional", "Entrenador personal"
+      "Juez", "Arquitecto", "Peluquero", "Buzo profesional", "Entrenador personal",
+      "Guardia de seguridad", "Tatuador", "Científico loco", "Mago ilusionista"
     )
   ),
   HeadsUpTheme(
@@ -239,7 +260,8 @@ val HeadsUpThemes = listOf(
       "Minecraft", "Roblox", "Fortnite", "GTA V", "Free Fire", "Among Us",
       "Super Mario", "Zelda", "Call of Duty", "FIFA / EA FC", "Clash Royale",
       "Pac-Man", "Sonic", "PlayStation 5", "Nintendo Switch", "Game Over",
-      "Headshot", "Noob", "Gamer Pro", "Brawl Stars", "Counter-Strike", "Tetris"
+      "Headshot", "Noob", "Gamer Pro", "Brawl Stars", "Counter-Strike", "Tetris",
+      "League of Legends", "Valorant", "Pokémon", "God of War", "Elden Ring"
     )
   ),
   HeadsUpTheme(
@@ -250,7 +272,8 @@ val HeadsUpThemes = listOf(
       "Despacito", "Bohemian Rhapsody", "Thriller de Michael Jackson", "La Bachata",
       "Gasolina", "Tusa", "Blinding Lights", "Shape of You", "Macarena",
       "Batería", "Saxofón", "Piano de cola", "Micrófono", "Autotune",
-      "Concierto en vivo", "Solista", "Bailarín de apoyo", "Solo de guitarra"
+      "Concierto en vivo", "Solista", "Bailarín de apoyo", "Solo de guitarra",
+      "Waka Waka", "Baila Baila Baila", " Danza Kuduro", "As It Was"
     )
   ),
   HeadsUpTheme(
@@ -261,7 +284,8 @@ val HeadsUpThemes = listOf(
       "Fútbol", "Baloncesto (NBA)", "Tenis", "Fórmula 1", "Boxeo",
       "Natación olímpica", "Golf", "Voleibol", "Ciclismo", "Béisbol",
       "Tiro con arco", "Skateboarding", "Maratón", "Gol de chilena",
-      "Penalti", "Triple en el último segundo", "Trofeo de la Copa del Mundo"
+      "Penalti", "Triple en el último segundo", "Trofeo de la Copa del Mundo",
+      "Surf", "Patinaje sobre hielo", "Karate", "Salto con garrocha"
     )
   )
 )
@@ -301,6 +325,10 @@ fun GameHeadsUpScreen(
         delay(1000)
         countdown--
       }
+      // Mark the first word as used when round starts
+      shuffledWords.getOrNull(0)?.let { firstWord ->
+        WordHistoryManager.markWordUsed(context, "HEADSUP_${selectedTheme.id}", firstWord)
+      }
       phase = HeadsUpPhase.PLAYING
     }
   }
@@ -332,6 +360,15 @@ fun GameHeadsUpScreen(
 
   val currentWord = shuffledWords.getOrNull(currentWordIndex) ?: "¡Terminaron las palabras!"
 
+  fun advanceToNextWord() {
+    if (shuffledWords.isNotEmpty()) {
+      currentWordIndex = (currentWordIndex + 1) % shuffledWords.size
+      shuffledWords.getOrNull(currentWordIndex)?.let { nextWord ->
+        WordHistoryManager.markWordUsed(context, "HEADSUP_${selectedTheme.id}", nextWord)
+      }
+    }
+  }
+
   Column(
     modifier = Modifier
       .fillMaxSize()
@@ -346,7 +383,13 @@ fun GameHeadsUpScreen(
       horizontalArrangement = Arrangement.SpaceBetween
     ) {
       Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
-        IconButton(onClick = onBack, modifier = Modifier.testTag("back_button")) {
+        IconButton(
+          onClick = {
+            HapticHelper.click(context)
+            onBack()
+          },
+          modifier = Modifier.testTag("back_button")
+        ) {
           Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver", tint = TextPrimary)
         }
         Spacer(modifier = Modifier.width(6.dp))
@@ -380,10 +423,10 @@ fun GameHeadsUpScreen(
         HeadsUpPhase.SELECT_THEME -> {
           Column(modifier = Modifier.fillMaxSize()) {
             Text(
-              text = "Selecciona una Temática para Jugar:",
+              text = "Selecciona una Temática (Con Historial Anti-Repetición):",
               fontWeight = FontWeight.Bold,
               color = TextSecondary,
-              fontSize = 15.sp,
+              fontSize = 14.sp,
               modifier = Modifier.fillMaxWidth()
             )
             Spacer(modifier = Modifier.height(10.dp))
@@ -419,7 +462,11 @@ fun GameHeadsUpScreen(
                     Spacer(modifier = Modifier.width(14.dp))
                     Column(modifier = Modifier.weight(1f)) {
                       Text(text = theme.name, fontWeight = FontWeight.Black, fontSize = 17.sp, color = TextPrimary)
-                      Text(text = "${theme.words.size} palabras listas", fontSize = 12.sp, color = TextSecondary)
+                      Text(
+                        text = if (theme.id == "NUMBERS") "Números variados del 1 al 5.000" else "${theme.words.size} palabras • Sin repetirse",
+                        fontSize = 12.sp,
+                        color = TextSecondary
+                      )
                     }
                     if (isSelected) {
                       Text(text = "SELECCIONADO", fontWeight = FontWeight.Black, fontSize = 11.sp, color = NeonPink)
@@ -435,7 +482,19 @@ fun GameHeadsUpScreen(
               onClick = {
                 HapticHelper.click(context)
                 shuffledWords.clear()
-                shuffledWords.addAll(selectedTheme.words.shuffled())
+                val baseWords = if (selectedTheme.id == "NUMBERS") {
+                  // Combine base numbers 1..5000 with freshly generated random numbers 1..5000
+                  val dynamicRandomNumbers = List(35) { Random.nextInt(1, 5001).toString() }
+                  (selectedTheme.words + dynamicRandomNumbers).distinct()
+                } else {
+                  selectedTheme.words
+                }
+                val smartList = WordHistoryManager.getSmartShuffledWords(
+                  context = context,
+                  categoryKey = "HEADSUP_${selectedTheme.id}",
+                  allWords = baseWords
+                )
+                shuffledWords.addAll(smartList)
                 currentWordIndex = 0
                 correctCount = 0
                 passedCount = 0
@@ -547,9 +606,7 @@ fun GameHeadsUpScreen(
                   HapticHelper.vibrateOnly(context, 18L)
                   SoundHelper.playPass()
                   passedCount++
-                  if (shuffledWords.isNotEmpty()) {
-                    currentWordIndex = (currentWordIndex + 1) % shuffledWords.size
-                  }
+                  advanceToNextWord()
                 },
                 modifier = Modifier.weight(1f).height(74.dp),
                 shape = RoundedCornerShape(18.dp),
@@ -564,9 +621,7 @@ fun GameHeadsUpScreen(
                 onClick = {
                   HapticHelper.success(context)
                   correctCount++
-                  if (shuffledWords.isNotEmpty()) {
-                    currentWordIndex = (currentWordIndex + 1) % shuffledWords.size
-                  }
+                  advanceToNextWord()
                 },
                 modifier = Modifier.weight(1.3f).height(74.dp),
                 shape = RoundedCornerShape(18.dp),

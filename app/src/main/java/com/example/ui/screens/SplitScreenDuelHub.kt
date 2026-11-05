@@ -16,14 +16,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.FlashOn
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -43,16 +39,15 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.data.model.GameType
 import com.example.ui.theme.ElectricGold
 import com.example.ui.theme.NeonCyan
 import com.example.ui.theme.NeonPink
 import com.example.ui.theme.SurfaceDark
-import com.example.ui.theme.SurfaceVariantDark
 import com.example.ui.theme.TextMuted
 import com.example.ui.theme.TextPrimary
 import com.example.ui.theme.TextSecondary
 import com.example.ui.util.HapticHelper
+import com.example.ui.util.PlayerRosterManager
 import com.example.ui.viewmodel.AppScreen
 
 @Composable
@@ -61,8 +56,11 @@ fun SplitScreenDuelHub(
   onLaunchDuel: (AppScreen, String, String) -> Unit
 ) {
   val context = LocalContext.current
-  var p1Name by remember { mutableStateOf(defaultP1Name) }
-  var p2Name by remember { mutableStateOf("Amigo") }
+  val initialPair = remember(defaultP1Name) {
+    PlayerRosterManager.getDuelPlayers(context, defaultP1Name)
+  }
+  var p1Name by remember { mutableStateOf(initialPair.first) }
+  var p2Name by remember { mutableStateOf(initialPair.second) }
 
   LazyColumn(
     modifier = Modifier
@@ -106,9 +104,9 @@ fun SplitScreenDuelHub(
       ) {
         Column(modifier = Modifier.padding(16.dp)) {
           Text(
-            text = "Configuración de Jugadores",
+            text = "Configuración de Jugadores (Guardado Automático)",
             fontWeight = FontWeight.Bold,
-            fontSize = 16.sp,
+            fontSize = 15.sp,
             color = ElectricGold
           )
           Spacer(modifier = Modifier.height(12.dp))
@@ -119,7 +117,10 @@ fun SplitScreenDuelHub(
           ) {
             OutlinedTextField(
               value = p1Name,
-              onValueChange = { p1Name = it },
+              onValueChange = {
+                p1Name = it
+                PlayerRosterManager.saveDuelPlayers(context, it, p2Name)
+              },
               label = { Text("Jugador 1 (Abajo)") },
               modifier = Modifier.weight(1f).testTag("input_p1_name"),
               shape = RoundedCornerShape(12.dp),
@@ -133,7 +134,10 @@ fun SplitScreenDuelHub(
 
             OutlinedTextField(
               value = p2Name,
-              onValueChange = { p2Name = it },
+              onValueChange = {
+                p2Name = it
+                PlayerRosterManager.saveDuelPlayers(context, p1Name, it)
+              },
               label = { Text("Jugador 2 (Arriba)") },
               modifier = Modifier.weight(1f).testTag("input_p2_name"),
               shape = RoundedCornerShape(12.dp),
@@ -148,7 +152,7 @@ fun SplitScreenDuelHub(
 
           Spacer(modifier = Modifier.height(8.dp))
           Text(
-            text = "💡 Coloquen el teléfono en una mesa plana entre ambos. La mitad del Jugador 2 se girará 180° automáticamente.",
+            text = "💡 Coloquen el teléfono en una mesa plana entre ambos. Los nombres quedan guardados aunque salgas o reinicies.",
             fontSize = 12.sp,
             color = TextMuted
           )
@@ -175,7 +179,10 @@ fun SplitScreenDuelHub(
         accentColor = NeonCyan,
         onPlay = {
           HapticHelper.click(context)
-          onLaunchDuel(AppScreen.GAME_10S_DUEL, p1Name, p2Name)
+          val finalP1 = p1Name.trim().ifEmpty { defaultP1Name }
+          val finalP2 = p2Name.trim().ifEmpty { "Amigo" }
+          PlayerRosterManager.saveDuelPlayers(context, finalP1, finalP2)
+          onLaunchDuel(AppScreen.GAME_10S_DUEL, finalP1, finalP2)
         }
       )
     }
@@ -190,7 +197,10 @@ fun SplitScreenDuelHub(
         accentColor = NeonPink,
         onPlay = {
           HapticHelper.click(context)
-          onLaunchDuel(AppScreen.GAME_TAP_DUEL, p1Name, p2Name)
+          val finalP1 = p1Name.trim().ifEmpty { defaultP1Name }
+          val finalP2 = p2Name.trim().ifEmpty { "Amigo" }
+          PlayerRosterManager.saveDuelPlayers(context, finalP1, finalP2)
+          onLaunchDuel(AppScreen.GAME_TAP_DUEL, finalP1, finalP2)
         }
       )
     }
@@ -205,7 +215,10 @@ fun SplitScreenDuelHub(
         accentColor = ElectricGold,
         onPlay = {
           HapticHelper.click(context)
-          onLaunchDuel(AppScreen.GAME_COLOR_DUEL, p1Name, p2Name)
+          val finalP1 = p1Name.trim().ifEmpty { defaultP1Name }
+          val finalP2 = p2Name.trim().ifEmpty { "Amigo" }
+          PlayerRosterManager.saveDuelPlayers(context, finalP1, finalP2)
+          onLaunchDuel(AppScreen.GAME_COLOR_DUEL, finalP1, finalP2)
         }
       )
     }

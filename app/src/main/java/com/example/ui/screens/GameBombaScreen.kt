@@ -78,7 +78,9 @@ import com.example.ui.theme.TextMuted
 import com.example.ui.theme.TextPrimary
 import com.example.ui.theme.TextSecondary
 import com.example.ui.util.HapticHelper
+import com.example.ui.util.PlayerRosterManager
 import com.example.ui.util.SoundHelper
+import com.example.ui.util.WordHistoryManager
 import kotlinx.coroutines.delay
 import kotlin.random.Random
 
@@ -176,16 +178,31 @@ fun GameBombaScreen(
   var phase by remember { mutableStateOf(BombaPhase.SETUP) }
   var totalRounds by remember { mutableIntStateOf(5) }
   var currentRound by remember { mutableIntStateOf(1) }
+
+  val savedNames = remember { PlayerRosterManager.getPartyPlayers(context, initialPlayerName) }
   val players = remember {
-    mutableStateListOf(
-      BombaPlayer(1, initialPlayerName),
-      BombaPlayer(2, "Amigo 1"),
-      BombaPlayer(3, "Amigo 2")
-    )
+    mutableStateListOf<BombaPlayer>().apply {
+      savedNames.forEachIndexed { idx, name ->
+        add(BombaPlayer(idx + 1, name))
+      }
+    }
   }
   var newPlayerName by remember { mutableStateOf("") }
   var currentCategory by remember { mutableStateOf("") }
   var countdownSeconds by remember { mutableIntStateOf(3) }
+
+  fun persistPlayers() {
+    PlayerRosterManager.savePartyPlayers(context, players.map { it.name })
+  }
+
+  fun pickNextCategory(): String {
+    return WordHistoryManager.pickSmartItem(
+      context = context,
+      categoryKey = "BOMBA_CATEGORIES",
+      items = BombaCategories,
+      wordSelector = { it }
+    )
+  }
 
   // Countdown timer phase
   LaunchedEffect(phase) {
@@ -201,18 +218,20 @@ fun GameBombaScreen(
     }
   }
 
-  // Ticking bomb with secret random duration
+  // Ticking bomb with constant progressive acceleration that does NOT telegraph when it will explode
   LaunchedEffect(phase) {
     if (phase == BombaPhase.TICKING) {
-      val secretDurationMs = Random.nextLong(14_000L, 36_000L)
+      val secretDurationMs = Random.nextLong(14_000L, 38_000L)
       val startTime = System.currentTimeMillis()
       var elapsed = 0L
 
       while (elapsed < secretDurationMs && phase == BombaPhase.TICKING) {
-        val remainingFraction = (1f - (elapsed.toFloat() / secretDurationMs)).coerceIn(0f, 1f)
-        val tickInterval = (220 + (remainingFraction * 480)).toLong().coerceIn(130L, 680L)
+        // Constant, smooth progression based purely on elapsed time (reference 45s curve),
+        // completely independent of secretDurationMs so players never know when it will detonate!
+        val progressiveTension = (elapsed.toFloat() / 45_000f).coerceIn(0f, 0.85f)
+        val tickInterval = (580L - (elapsed / 110L)).coerceIn(220L, 580L)
         HapticHelper.vibrateOnly(context, 12L)
-        SoundHelper.playTick(urgency = 1f - remainingFraction)
+        SoundHelper.playTick(urgency = progressiveTension)
         delay(tickInterval)
         elapsed = System.currentTimeMillis() - startTime
       }
@@ -239,7 +258,13 @@ fun GameBombaScreen(
       horizontalArrangement = Arrangement.SpaceBetween
     ) {
       Row(verticalAlignment = Alignment.CenterVertically) {
-        IconButton(onClick = onBack, modifier = Modifier.testTag("back_button")) {
+        IconButton(
+          onClick = {
+            HapticHelper.click(context)
+            onBack()
+          },
+          modifier = Modifier.testTag("back_button")
+        ) {
           Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver", tint = TextPrimary)
         }
         Spacer(modifier = Modifier.width(8.dp))
@@ -352,6 +377,7 @@ fun GameBombaScreen(
                         HapticHelper.click(context)
                         players.add(BombaPlayer((players.maxOfOrNull { it.id } ?: 0) + 1, name))
                         newPlayerName = ""
+                        persistPlayers()
                       }
                     },
                     shape = RoundedCornerShape(12.dp),
@@ -383,6 +409,7 @@ fun GameBombaScreen(
                       IconButton(onClick = {
                         HapticHelper.click(context)
                         players.remove(p)
+                        persistPlayers()
                       }) {
                         Icon(Icons.Default.Close, contentDescription = "Eliminar", tint = NeonPink)
                       }
@@ -397,9 +424,10 @@ fun GameBombaScreen(
             Button(
               onClick = {
                 HapticHelper.click(context)
+                persistPlayers()
                 currentRound = 1
                 players.forEach { it.penaltyPoints = 0 }
-                currentCategory = BombaCategories.random()
+                currentCategory = pickNextCategory()
                 phase = BombaPhase.COUNTDOWN
               },
               modifier = Modifier
@@ -583,7 +611,7 @@ fun GameBombaScreen(
                       if (currentRound < totalRounds) {
                         HapticHelper.click(context)
                         currentRound++
-                        currentCategory = BombaCategories.random()
+                        currentCategory = pickNextCategory()
                         phase = BombaPhase.COUNTDOWN
                       } else {
                         HapticHelper.vibrateOnly(context, 80L)

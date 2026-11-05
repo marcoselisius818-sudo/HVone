@@ -7,25 +7,32 @@ enum class GameType(
   val description: String,
   val isDuelSupported: Boolean
 ) {
+  IMPOSTOR(
+    title = "El Impostor",
+    subtitle = "Deducción social, pistas y votación",
+    iconEmoji = "🕵️",
+    description = "Todos reciben la palabra secreta menos el Impostor, quien recibe una pista sutil. ¡Debatan y voten manualmente para descubrirlo!",
+    isDuelSupported = false
+  ),
   BOMBA(
     title = "La Bomba",
-    subtitle = "Temáticas y tiempo secreto",
+    subtitle = "Temáticas y tensión progresiva",
     iconEmoji = "💣",
-    description = "Menciona palabras de la temática en voz alta y pásate la ronda con tus amigos antes de que la bomba estalle en un segundo secreto.",
+    description = "Menciona palabras de la temática en voz alta y pásate la ronda con tus amigos antes de que la bomba estalle sin previo aviso.",
     isDuelSupported = false
   ),
   HEADS_UP(
-    title = "Adivina la Palabra",
-    subtitle = "Juego en la frente con temáticas",
+    title = "Adivina Qué Soy",
+    subtitle = "Juego en la frente con historial inteligente",
     iconEmoji = "🎴",
-    description = "Coloca el móvil en tu frente. Tus amigos te dan pistas para adivinar palabras o números de la temática.",
+    description = "Coloca el móvil en tu frente. Tus amigos te dan pistas para adivinar palabras o números del 1 al 5.000 sin repeticiones.",
     isDuelSupported = false
   ),
   GUESS_NUMBER(
     title = "Adivina el Número",
-    subtitle = "Mayor o Menor (hasta 5.000)",
+    subtitle = "Mayor o Menor (del 1 al 5.000)",
     iconEmoji = "🔢",
-    description = "Descubre el número secreto del 1 hasta 5.000 con pistas de 'Mayor' o 'Menor' en el menor número de intentos.",
+    description = "Descubre el número secreto del 1 hasta 5.000 en modo individual o por turnos con tus amigos usando el teclado rápido.",
     isDuelSupported = true
   ),
   STOP_10S(

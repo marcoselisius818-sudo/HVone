@@ -20,16 +20,13 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -64,7 +61,7 @@ import com.example.ui.theme.TextMuted
 import com.example.ui.theme.TextPrimary
 import com.example.ui.theme.TextSecondary
 import com.example.ui.util.HapticHelper
-import com.example.ui.viewmodel.AppScreen
+import com.example.ui.util.PlayerRosterManager
 
 @Composable
 fun TournamentsScreen(
@@ -73,12 +70,14 @@ fun TournamentsScreen(
   onOpenBracket: (TournamentEntity) -> Unit
 ) {
   val context = LocalContext.current
+  val savedRoster = remember { PlayerRosterManager.getPartyPlayers(context) }
+
   var showCreateDialog by remember { mutableStateOf(false) }
   var tournamentName by remember { mutableStateOf("Copa TikTok Amigos") }
   var playerCount by remember { mutableIntStateOf(4) }
-  var friend1 by remember { mutableStateOf("Nico") }
-  var friend2 by remember { mutableStateOf("Sofi") }
-  var friend3 by remember { mutableStateOf("Lucas") }
+  var friend1 by remember { mutableStateOf(savedRoster.getOrElse(1) { "Nico" }) }
+  var friend2 by remember { mutableStateOf(savedRoster.getOrElse(2) { "Sofi" }) }
+  var friend3 by remember { mutableStateOf(savedRoster.getOrElse(3) { "Lucas" }) }
 
   var joinCodeInput by remember { mutableStateOf("") }
   var joinStatusMessage by remember { mutableStateOf<String?>(null) }
@@ -178,7 +177,7 @@ fun TournamentsScreen(
             Button(
               onClick = {
                 HapticHelper.click(context)
-                onCreateTournament("Copa Diaria TikTok", 4, listOf("ViralBot 1", "TikPro 2", "RushKing 3"))
+                onCreateTournament("Copa Diaria TikTok", 4, listOf(friend1, friend2, friend3))
               },
               shape = RoundedCornerShape(12.dp),
               colors = ButtonDefaults.buttonColors(containerColor = ElectricGold, contentColor = Color.Black)
@@ -228,7 +227,7 @@ fun TournamentsScreen(
                 val code = joinCodeInput.trim()
                 if (code.isNotEmpty()) {
                   joinStatusMessage = "¡Conectado a la sala $code! Cargando llave..."
-                  onCreateTournament("Torneo $code", 4, listOf("Amigo 1", "Amigo 2", "Amigo 3"))
+                  onCreateTournament("Torneo $code", 4, listOf(friend1, friend2, friend3))
                 }
               },
               shape = RoundedCornerShape(12.dp),
@@ -289,6 +288,10 @@ fun TournamentsScreen(
           modifier = Modifier
             .fillMaxWidth()
             .border(1.dp, Color(0xFF282C40), RoundedCornerShape(16.dp))
+            .clickable {
+              HapticHelper.click(context)
+              onOpenBracket(tourney)
+            }
         ) {
           Row(
             modifier = Modifier.padding(16.dp),
@@ -358,7 +361,10 @@ fun TournamentsScreen(
           Text("Cantidad de Jugadores:", fontWeight = FontWeight.Bold, color = TextSecondary, fontSize = 13.sp)
           Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Button(
-              onClick = { playerCount = 4 },
+              onClick = {
+                HapticHelper.click(context)
+                playerCount = 4
+              },
               colors = ButtonDefaults.buttonColors(
                 containerColor = if (playerCount == 4) NeonPink else SurfaceVariantDark,
                 contentColor = Color.White
@@ -369,7 +375,10 @@ fun TournamentsScreen(
             }
 
             Button(
-              onClick = { playerCount = 8 },
+              onClick = {
+                HapticHelper.click(context)
+                playerCount = 8
+              },
               colors = ButtonDefaults.buttonColors(
                 containerColor = if (playerCount == 8) NeonPink else SurfaceVariantDark,
                 contentColor = Color.White
@@ -380,7 +389,7 @@ fun TournamentsScreen(
             }
           }
 
-          Text("Nombres de Amigos / Rivales:", fontWeight = FontWeight.Bold, color = TextSecondary, fontSize = 13.sp)
+          Text("Nombres de Amigos / Rivales (Persistentes):", fontWeight = FontWeight.Bold, color = TextSecondary, fontSize = 13.sp)
           OutlinedTextField(
             value = friend1,
             onValueChange = { friend1 = it },
@@ -404,7 +413,11 @@ fun TournamentsScreen(
       confirmButton = {
         Button(
           onClick = {
+            HapticHelper.click(context)
             showCreateDialog = false
+            val p1 = savedRoster.firstOrNull() ?: "Jugador 1"
+            val updatedRoster = (listOf(p1, friend1, friend2, friend3) + savedRoster.drop(4)).distinct()
+            PlayerRosterManager.savePartyPlayers(context, updatedRoster)
             onCreateTournament(
               tournamentName,
               playerCount,
@@ -418,7 +431,10 @@ fun TournamentsScreen(
       },
       dismissButton = {
         Button(
-          onClick = { showCreateDialog = false },
+          onClick = {
+            HapticHelper.click(context)
+            showCreateDialog = false
+          },
           colors = ButtonDefaults.buttonColors(containerColor = SurfaceVariantDark, contentColor = TextSecondary)
         ) {
           Text("Cancelar")
@@ -467,7 +483,10 @@ fun TournamentBracketView(
           )
         }
         Button(
-          onClick = onBack,
+          onClick = {
+            HapticHelper.click(context)
+            onBack()
+          },
           colors = ButtonDefaults.buttonColors(containerColor = SurfaceVariantDark, contentColor = TextPrimary),
           shape = RoundedCornerShape(10.dp)
         ) {

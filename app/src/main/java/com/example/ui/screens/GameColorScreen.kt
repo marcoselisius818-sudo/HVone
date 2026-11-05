@@ -159,7 +159,13 @@ private fun GameColorSoloView(
       horizontalArrangement = Arrangement.SpaceBetween
     ) {
       Row(verticalAlignment = Alignment.CenterVertically) {
-        IconButton(onClick = onBack, modifier = Modifier.testTag("back_button")) {
+        IconButton(
+          onClick = {
+            HapticHelper.click(context)
+            onBack()
+          },
+          modifier = Modifier.testTag("back_button")
+        ) {
           Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver", tint = TextPrimary)
         }
         Spacer(modifier = Modifier.width(8.dp))
@@ -489,6 +495,7 @@ private fun GameColorDuelView(
           Spacer(modifier = Modifier.height(6.dp))
           Button(
             onClick = {
+              HapticHelper.click(context)
               p1Score = 0
               p2Score = 0
               winner = null

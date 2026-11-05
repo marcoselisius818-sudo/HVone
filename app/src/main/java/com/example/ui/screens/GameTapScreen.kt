@@ -156,7 +156,13 @@ private fun GameTapSoloView(
       horizontalArrangement = Arrangement.SpaceBetween
     ) {
       Row(verticalAlignment = Alignment.CenterVertically) {
-        IconButton(onClick = onBack, modifier = Modifier.testTag("back_button")) {
+        IconButton(
+          onClick = {
+            HapticHelper.click(context)
+            onBack()
+          },
+          modifier = Modifier.testTag("back_button")
+        ) {
           Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver", tint = TextPrimary)
         }
         Spacer(modifier = Modifier.width(8.dp))
@@ -468,7 +474,10 @@ private fun GameTapDuelView(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
       ) {
-        IconButton(onClick = onBack) {
+        IconButton(onClick = {
+          HapticHelper.click(context)
+          onBack()
+        }) {
           Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Salir", tint = TextSecondary)
         }
 

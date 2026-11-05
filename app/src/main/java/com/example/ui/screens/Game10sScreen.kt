@@ -166,7 +166,10 @@ private fun Game10sSoloView(
     ) {
       Row(verticalAlignment = Alignment.CenterVertically) {
         IconButton(
-          onClick = onBack,
+          onClick = {
+            HapticHelper.click(context)
+            onBack()
+          },
           modifier = Modifier.testTag("back_button")
         ) {
           Icon(
@@ -522,7 +525,10 @@ private fun Game10sDuelView(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
       ) {
-        IconButton(onClick = onBack) {
+        IconButton(onClick = {
+          HapticHelper.click(context)
+          onBack()
+        }) {
           Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Salir", tint = TextSecondary)
         }
 

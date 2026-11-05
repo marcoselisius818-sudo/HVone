@@ -295,7 +295,18 @@ fun HomeScreen(
       )
     }
 
-    // Party Game 2: Adivina la Palabra (En la Frente)
+    // Party Game 2: El Impostor
+    item {
+      GameHubItem(
+        gameType = GameType.IMPOSTOR,
+        badge = "🕵️ NUEVO FIESTA",
+        badgeColor = NeonCyan,
+        onPlaySolo = { onStartGame(GameType.IMPOSTOR, false) },
+        onPlayDuel = null
+      )
+    }
+
+    // Party Game 3: Adivina la Palabra (En la Frente)
     item {
       GameHubItem(
         gameType = GameType.HEADS_UP,
@@ -306,18 +317,19 @@ fun HomeScreen(
       )
     }
 
-    // Party Game 3: Adivina el Número (Mayor o Menor)
+    // Party Game 4: Adivina el Número (1 al 5.000)
     item {
       GameHubItem(
         gameType = GameType.GUESS_NUMBER,
-        badge = "🔢 NÚMEROS",
+        badge = "🔢 1 AL 5.000",
         badgeColor = ElectricGold,
         onPlaySolo = { onStartGame(GameType.GUESS_NUMBER, false) },
-        onPlayDuel = null
+        onPlayDuel = { onStartGame(GameType.GUESS_NUMBER, true) },
+        duelButtonLabel = "👥 Por Turnos"
       )
     }
 
-    // Mini-game 4: 10.00s Stop
+    // Mini-game 5: 10.00s Stop
     item {
       GameHubItem(
         gameType = GameType.STOP_10S,
@@ -397,7 +409,8 @@ private fun GameHubItem(
   badge: String,
   badgeColor: Color,
   onPlaySolo: () -> Unit,
-  onPlayDuel: (() -> Unit)?
+  onPlayDuel: (() -> Unit)?,
+  duelButtonLabel: String = "⚔️ Duelo 1v1"
 ) {
   val context = LocalContext.current
 
@@ -414,7 +427,7 @@ private fun GameHubItem(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
       ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
           Text(text = gameType.iconEmoji, fontSize = 28.sp)
           Spacer(modifier = Modifier.width(10.dp))
           Column {
@@ -422,6 +435,8 @@ private fun GameHubItem(
             Text(text = gameType.subtitle, fontSize = 12.sp, color = TextSecondary)
           }
         }
+
+        Spacer(modifier = Modifier.width(8.dp))
 
         Box(
           modifier = Modifier
@@ -474,7 +489,7 @@ private fun GameHubItem(
             shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(containerColor = NeonPink, contentColor = Color.White)
           ) {
-            Text("⚔️ Duelo 1v1", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+            Text(duelButtonLabel, fontWeight = FontWeight.Bold, fontSize = 12.sp)
           }
         }
       }
