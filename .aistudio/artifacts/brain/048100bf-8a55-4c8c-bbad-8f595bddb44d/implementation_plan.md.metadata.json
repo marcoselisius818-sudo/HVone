@@ -1,6 +1,6 @@
 {
-  "summary":  "Plan de implementación para eliminar Coach Gemini, simplificar el inicio de sesión con guardado automático, integrar efectos de sonido con botón para silenciar, agregar animaciones fluidas, optimizar el rendimiento contra el lag, limpiar textos innecesarios y asegurar la compilación limpia en GitHub Actions.",
-  "updatedAt":  "2026-10-30T02:06:06.544929087Z",
+  "summary":  "Plan de implementación para renovar todas las pistas de El Impostor con vocabulario cotidiano latinoamericano de 1-2 palabras naturales, corregir el destello de la palabra secreta al iniciar nueva ronda, ajustar la victoria del impostor al igualar en número a los inocentes y añadir selector de 1, 2 o 3 impostores según la cantidad de jugadores.",
+  "updatedAt":  "2026-11-09T06:18:53.403881739Z",
   "requestFeedback":  true,
   "userFacing":  true
 }

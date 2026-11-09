@@ -23,9 +23,9 @@ enum class GameType(
   ),
   HEADS_UP(
     title = "Adivina Qué Soy",
-    subtitle = "Juego en la frente con historial inteligente",
+    subtitle = "Rondas de 1, 3, 5 o 10 min en la frente",
     iconEmoji = "🎴",
-    description = "Coloca el móvil en tu frente. Tus amigos te dan pistas para adivinar palabras o números del 1 al 5.000 sin repeticiones.",
+    description = "Coloca el móvil en tu frente. Elige entre 1 y 10 minutos y adivina palabras o números del 1 al 5.000 sin repeticiones.",
     isDuelSupported = false
   ),
   GUESS_NUMBER(
@@ -36,10 +36,10 @@ enum class GameType(
     isDuelSupported = true
   ),
   STOP_10S(
-    title = "Desafío 10.00s",
-    subtitle = "El cronómetro ciego viral",
+    title = "Cronómetro a Ciegas",
+    subtitle = "Modos 1s, 10s, 15s y Azar (1-30s)",
     iconEmoji = "⏱️",
-    description = "A los 5.00s los números desaparecen. ¡Frena lo más cerca posible de 10.000 segundos!",
+    description = "El cronómetro se desvanece progresivamente hasta quedar incógnito. ¡Frena en el segundo exacto en 1s, 10s, 15s o al azar!",
     isDuelSupported = true
   ),
   TAP_BATTLE(

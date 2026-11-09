@@ -1,31 +1,69 @@
-# Plan de Optimización, Sonido y Pulido Visual
+# Perfeccionamiento de El Impostor: Pistas Naturales LATAM, Multijugador con 1–3 Impostores y Corrección de Transición
 
-## 1. Eliminación Completa de Coach Gemini y Limpieza de Perfil
-- **Retiro de Coach Gemini**: Se eliminará el módulo de inteligencia artificial (`TikTokAiCoach.kt`), el diálogo emergente en la pantalla principal, los botones de sugerencias y las funciones asociadas en el `MainViewModel`.
-- **Inicio de Sesión Simplificado y Guardado Automático**:
-  - Se reemplazará la tarjeta técnica de `"Gemini AI & Firebase Cloud"` en la pantalla de **Perfil** por una tarjeta limpia de **Guardado de Progreso**.
-  - Se eliminará cualquier mención técnica a `"Firebase"` o `"Room"`, mostrando únicamente la invitación clara: *"Inicia sesión con tu cuenta de Google para que tus datos, récords y trofeos queden guardados automáticamente"*.
-  - Al iniciar sesión o registrar nuevos puntajes con la sesión activa, el progreso se respaldará y recuperará automáticamente sin requerir botones manuales adicionales.
+Este plan detalla los ajustes para que **El Impostor** tenga pistas naturales y creíbles en contexto latinoamericano, soporte partidas con **1, 2 o 3 impostores**, aplique la regla de victoria cuando los impostores igualan en número a los inocentes, y elimine por completo el destello de la nueva palabra al cambiar de ronda.
 
-## 2. Sistema de Efectos de Sonido Arcade (`SoundHelper`) con Botón de Silencio
-- **Motor de Audio Ligero sin Lag**: Se creará `SoundHelper` utilizando síntesis de tonos de baja latencia en un hilo secundario para no bloquear jamás la interfaz ni requerir archivos pesados:
-  - **La Bomba**: Tic-tac rítmico durante la ronda, pitidos en la cuenta regresiva (`3, 2, 1`) y sonido de explosión al estallar la bomba.
-  - **Adivina la Palabra**: Pitidos de preparación, sonido alegre al acertar palabra, tono suave al pasar y timbre de fin de tiempo.
-  - **Adivina el Número**: Efecto ascendente/descendente para pistas (*Mayor* / *Menor*) y fanfarria al descubrir el número secreto.
-  - **Reto 10.00s, Tap Rush, Stroop y Emojis**: Efectos de toque rápido, acierto/error en colores, recolección de gemas y sonido de victoria al romper récords.
-- **Control de Silencio (Mute)**: Se añadirá un botón accesible de sonido activado/silenciado (`🔊` / `🔇`) en la barra superior para silenciar o activar los efectos en cualquier momento.
+---
 
-## 3. Limpieza de Mensajes Innecesarios
-- **Juego de La Bomba**: Se eliminará el texto innecesario `"¡Sin botones tediosos! La bomba explotará sola en cualquier segundo sin previo aviso..."` dejando una interfaz directa y enfocada en la temática activa.
-- **Revisión General de Textos**: Se simplificarán las descripciones redundantes en las demás pantallas para que la interfaz luzca más limpia y directa.
+## Decisiones Confirmadas por el Usuario
 
-## 4. Animaciones Suaves y Optimización Anti-Lag (60 FPS)
-- **Transiciones Fluidas**: Se aplicarán transiciones suaves (`Crossfade` / `AnimatedContent` y `animateContentSize`) al cambiar entre pantallas y fases de cada minijuego.
-- **Optimización de Rendimiento**:
-  - En **La Bomba**, la animación de pulso solo se ejecutará mientras la bomba esté activa y usará aceleración por hardware (`graphicsLayer`) en lugar de recalcular el diseño en cada fotograma.
-  - En **Atrapa y Esquiva (Emojis)**, se eliminará el bloque duplicado de renderizado de carriles y se optimizará el bucle de movimiento para evitar recomposiciones innecesarias.
-  - Se desactivarán dependencias no utilizadas en `app/build.gradle.kts` para reducir el tamaño del APK y acelerar la compilación.
+> [!IMPORTANT]
+> Estas decisiones fueron confirmadas directamente por el usuario:
 
-## 5. Verificación de Compatibilidad con GitHub Actions
-- Se mantendrán las referencias dinámicas seguras para la configuración de autenticación y base de datos (`resources.getIdentifier`) de modo que GitHub Actions genere el `.apk` sin errores aunque `google-services.json` no esté subido al repositorio.
-- Se verificará la compilación completa del proyecto con `compile_applet`.
+- **Estilo de Pistas (Contexto Cotidiano LATAM)**: Cada pista será **1 palabra (o 2 como máximo)** totalmente natural y relacionada con la palabra secreta (algo que cualquier persona diría sin levantar sospechas, como *"Ropa"* para *Maleta*, *"Millonario"* para *El Juego del Calamar*, *"Lluvia"* para *Paraguas* o *"Salsa"* para *Tacos*), sin ser rebuscada ni regalar la respuesta exacta.
+- **Cantidad de Impostores (1, 2 o 3)**:
+  - **1 Impostor**: Disponible desde **3 jugadores**.
+  - **2 Impostores**: Disponible desde **5 jugadores**.
+  - **3 Impostores**: Disponible desde **7 jugadores**.
+- **Condición de Victoria del Impostor**: Los impostores ganan únicamente cuando queda **la misma cantidad de impostores vivos que de inocentes vivos** (`impostores == inocentes`), mientras que los inocentes ganan al descubrir y expulsar a todos los impostores.
+
+---
+
+## 1. Resumen de Mejoras
+
+1. **Renovación Total del Banco de Pistas (7 Categorías)**:
+   - Se eliminan las palabras filosóficas o rebuscadas (*"Paradoja"*, *"Escapada"*, *"Consecuencia"*, *"Infancia"*) y se reemplazan por asociaciones cotidianas que sirven como salvavidas real en una conversación entre amigos en Latinoamérica.
+2. **Selector de 1, 2 o 3 Impostores con Validación Automática**:
+   - Selector interactivo en la pantalla de preparación que habilita **2 impostores** al tener 5+ jugadores y **3 impostores** al tener 7+ jugadores.
+   - Si el grupo reduce la lista de jugadores por debajo del mínimo requerido, la cantidad de impostores se ajusta automáticamente.
+3. **Flujo de Votación y Expulsión para Múltiples Impostores**:
+   - Al expulsar a un jugador cuando se juega con 2 o 3 impostores, si atrapan a un impostor pero aún queda otro oculto, se revela que **sí era Impostor** y la partida continúa hasta atrapar a los demás o hasta que los impostores igualen en número a los inocentes.
+4. **Eliminación del Destello (Flash) de la Nueva Palabra al Reiniciar Ronda**:
+   - La pantalla de fin de partida (`GAME_OVER`) mostrará una copia congelada (`RoundOverSnapshot`) de la ronda finalizada. Así, al presionar *"Jugar Otra Ronda Rápida"*, la transición de salida nunca mostrará la palabra secreta recién sorteada para la siguiente partida.
+
+---
+
+## 2. Arquitectura y Flujo de Estado
+
+```
+┌──────────────────────────────────────────────────────────────────────────┐
+│                     CONFIGURACIÓN (ImpostorPhase.SETUP)                  │
+│  • Jugadores Persistentes (Mín. 3)                                       │
+│  • Selector de Impostores:                                               │
+│    - [1 Impostor] (3+ jug.)                                              │
+│    - [2 Impostores] (5+ jug.)                                            │
+│    - [3 Impostores] (7+ jug.)                                            │
+└────────────────────────────────────┬─────────────────────────────────────┘
+                                     │
+                                     ▼
+┌──────────────────────────────────────────────────────────────────────────┐
+│               SORTEO Y REVELACIÓN (PASS_AND_REVEAL -> DEBATE)            │
+│  • Pistas de 1-2 palabras naturales LATAM (ej. "Ropa", "Millonario")     │
+│  • Categoría oculta si el modo es "Todo Mezclado"                        │
+│  • Probabilidad baja (~12%) de que un Impostor inicie la ronda           │
+└────────────────────────────────────┬─────────────────────────────────────┘
+                                     │
+                                     ▼
+┌──────────────────────────────────────────────────────────────────────────┐
+│                     VOTACIÓN MANUAL Y CONDICIÓN DE FIN                   │
+│  • ¿Impostores vivos == 0? ───────────► ¡Ganan los Inocentes!            │
+│  • ¿Impostores vivos == Inocentes? ───► ¡Ganan los Impostores!           │
+│  • De lo contrario ───────────────────► Revelar rol del expulsado y      │
+│                                         continuar debate                 │
+├──────────────────────────────────────────────────────────────────────────┤
+│  • RoundOverSnapshot inmutable: evita que la nueva palabra parpadee      │
+│    durante la animación de salida al iniciar otra ronda rápida.          │
+└──────────────────────────────────────────────────────────────────────────┘
+```
+
+### Auditoría y Verificación
+- Al finalizar la implementación se ejecutará `compile_applet` y `gradle :app:testDebugUnitTest` para verificar que no existan errores ni incompatibilidades.

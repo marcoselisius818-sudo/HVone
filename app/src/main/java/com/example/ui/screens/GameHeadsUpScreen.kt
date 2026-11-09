@@ -35,6 +35,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -68,6 +70,7 @@ import com.example.ui.util.HapticHelper
 import com.example.ui.util.SoundHelper
 import com.example.ui.util.WordHistoryManager
 import kotlinx.coroutines.delay
+import java.util.Locale
 import kotlin.random.Random
 
 data class HeadsUpTheme(
@@ -75,6 +78,18 @@ data class HeadsUpTheme(
   val name: String,
   val icon: String,
   val words: List<String>
+)
+
+data class HeadsUpDurationOption(
+  val seconds: Int,
+  val label: String
+)
+
+private val HeadsUpDurationOptions = listOf(
+  HeadsUpDurationOption(60, "1 min"),
+  HeadsUpDurationOption(180, "3 min"),
+  HeadsUpDurationOption(300, "5 min"),
+  HeadsUpDurationOption(600, "10 min")
 )
 
 private val BaseNumbers1To5000: List<String> = buildList {
@@ -88,7 +103,6 @@ private val BaseNumbers1To5000: List<String> = buildList {
       "4000", "4321", "4444", "4500", "4850", "4999", "5000"
     )
   )
-  // Also include intermediate milestones across 1..5000 so every number session feels fresh
   for (n in 105..4955 step 65) {
     add(n.toString())
   }
@@ -273,7 +287,7 @@ val HeadsUpThemes = listOf(
       "Gasolina", "Tusa", "Blinding Lights", "Shape of You", "Macarena",
       "Batería", "Saxofón", "Piano de cola", "Micrófono", "Autotune",
       "Concierto en vivo", "Solista", "Bailarín de apoyo", "Solo de guitarra",
-      "Waka Waka", "Baila Baila Baila", " Danza Kuduro", "As It Was"
+      "Waka Waka", "Baila Baila Baila", "Danza Kuduro", "As It Was"
     )
   ),
   HeadsUpTheme(
@@ -297,6 +311,16 @@ enum class HeadsUpPhase {
   ROUND_OVER
 }
 
+private fun formatHeadsUpTimer(seconds: Int): String {
+  return if (seconds >= 60) {
+    val m = seconds / 60
+    val s = seconds % 60
+    String.format(Locale.US, "%02d:%02d", m, s)
+  } else {
+    "${seconds}s"
+  }
+}
+
 @Composable
 fun GameHeadsUpScreen(
   onBack: () -> Unit,
@@ -308,6 +332,7 @@ fun GameHeadsUpScreen(
 
   var phase by remember { mutableStateOf(HeadsUpPhase.SELECT_THEME) }
   var selectedTheme by remember { mutableStateOf(HeadsUpThemes[0]) }
+  var selectedDurationSec by remember { mutableIntStateOf(60) }
   var countdown by remember { mutableIntStateOf(3) }
   var timeLeft by remember { mutableIntStateOf(60) }
   var currentWordIndex by remember { mutableIntStateOf(0) }
@@ -325,7 +350,6 @@ fun GameHeadsUpScreen(
         delay(1000)
         countdown--
       }
-      // Mark the first word as used when round starts
       shuffledWords.getOrNull(0)?.let { firstWord ->
         WordHistoryManager.markWordUsed(context, "HEADSUP_${selectedTheme.id}", firstWord)
       }
@@ -333,10 +357,10 @@ fun GameHeadsUpScreen(
     }
   }
 
-  // 60-second round timer
+  // Configurable round timer (1 min, 3 min, 5 min, 10 min)
   LaunchedEffect(phase) {
     if (phase == HeadsUpPhase.PLAYING) {
-      timeLeft = 60
+      timeLeft = selectedDurationSec
       while (timeLeft > 0 && phase == HeadsUpPhase.PLAYING) {
         delay(1000)
         timeLeft--
@@ -348,9 +372,10 @@ fun GameHeadsUpScreen(
         HapticHelper.vibrateOnly(context, 100L)
         SoundHelper.playVictory()
         phase = HeadsUpPhase.ROUND_OVER
+        val durationLabel = HeadsUpDurationOptions.find { it.seconds == selectedDurationSec }?.label ?: "${selectedDurationSec}s"
         onRecordResult(
           correctCount * 100,
-          "Adivina la Palabra (${selectedTheme.name}): $correctCount aciertos",
+          "Adivina la Palabra (${selectedTheme.name}, $durationLabel): $correctCount aciertos",
           "Modo Frente",
           correctCount >= 5
         )
@@ -409,7 +434,7 @@ fun GameHeadsUpScreen(
       }
     }
 
-    Spacer(modifier = Modifier.height(12.dp))
+    Spacer(modifier = Modifier.height(10.dp))
 
     AnimatedContent(
       targetState = phase,
@@ -422,6 +447,58 @@ fun GameHeadsUpScreen(
       when (currentPhase) {
         HeadsUpPhase.SELECT_THEME -> {
           Column(modifier = Modifier.fillMaxSize()) {
+            // Duration Selector Card
+            Card(
+              colors = CardDefaults.cardColors(containerColor = SurfaceDark),
+              shape = RoundedCornerShape(16.dp),
+              modifier = Modifier
+                .fillMaxWidth()
+                .border(1.dp, Color(0xFF282C40), RoundedCornerShape(16.dp))
+            ) {
+              Column(modifier = Modifier.padding(12.dp)) {
+                Text(
+                  text = "⏳ Duración de la Ronda:",
+                  fontWeight = FontWeight.Bold,
+                  color = ElectricGold,
+                  fontSize = 13.sp
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                Row(
+                  modifier = Modifier.fillMaxWidth(),
+                  horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                  HeadsUpDurationOptions.forEach { option ->
+                    val isSelected = selectedDurationSec == option.seconds
+                    FilterChip(
+                      selected = isSelected,
+                      onClick = {
+                        HapticHelper.click(context)
+                        selectedDurationSec = option.seconds
+                      },
+                      label = {
+                        Text(
+                          text = option.label,
+                          fontWeight = FontWeight.Bold,
+                          fontSize = 12.sp,
+                          textAlign = TextAlign.Center,
+                          modifier = Modifier.fillMaxWidth()
+                        )
+                      },
+                      modifier = Modifier.weight(1f),
+                      colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = NeonCyan,
+                        selectedLabelColor = Color.Black,
+                        containerColor = Color(0xFF1E2235),
+                        labelColor = TextSecondary
+                      )
+                    )
+                  }
+                }
+              }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
             Text(
               text = "Selecciona una Temática (Con Historial Anti-Repetición):",
               fontWeight = FontWeight.Bold,
@@ -429,7 +506,7 @@ fun GameHeadsUpScreen(
               fontSize = 14.sp,
               modifier = Modifier.fillMaxWidth()
             )
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             LazyColumn(
               modifier = Modifier.weight(1f),
@@ -483,8 +560,7 @@ fun GameHeadsUpScreen(
                 HapticHelper.click(context)
                 shuffledWords.clear()
                 val baseWords = if (selectedTheme.id == "NUMBERS") {
-                  // Combine base numbers 1..5000 with freshly generated random numbers 1..5000
-                  val dynamicRandomNumbers = List(35) { Random.nextInt(1, 5001).toString() }
+                  val dynamicRandomNumbers = List(60) { Random.nextInt(1, 5001).toString() }
                   (selectedTheme.words + dynamicRandomNumbers).distinct()
                 } else {
                   selectedTheme.words
@@ -506,7 +582,8 @@ fun GameHeadsUpScreen(
             ) {
               Icon(Icons.Default.PlayArrow, contentDescription = null)
               Spacer(modifier = Modifier.width(8.dp))
-              Text(text = "¡COLOCAR EN LA FRENTE Y JUGAR!", fontWeight = FontWeight.Black, fontSize = 16.sp)
+              val durLabel = HeadsUpDurationOptions.find { it.seconds == selectedDurationSec }?.label ?: "1 min"
+              Text(text = "¡COLOCAR EN LA FRENTE ($durLabel)!", fontWeight = FontWeight.Black, fontSize = 16.sp)
             }
           }
         }
@@ -545,14 +622,25 @@ fun GameHeadsUpScreen(
           ) {
             Row(
               modifier = Modifier.fillMaxWidth(),
-              horizontalArrangement = Arrangement.SpaceBetween
+              horizontalArrangement = Arrangement.SpaceBetween,
+              verticalAlignment = Alignment.CenterVertically
             ) {
               Text(
-                text = "⏳ ${timeLeft}s",
+                text = "⏳ ${formatHeadsUpTimer(timeLeft)}",
                 fontWeight = FontWeight.Black,
                 fontSize = 24.sp,
                 color = if (timeLeft <= 10) NeonPink else ElectricGold
               )
+              Button(
+                onClick = {
+                  HapticHelper.click(context)
+                  phase = HeadsUpPhase.ROUND_OVER
+                },
+                shape = RoundedCornerShape(10.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF282C40), contentColor = TextSecondary)
+              ) {
+                Text("Terminar", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+              }
               Text(text = "Aciertos: $correctCount", fontWeight = FontWeight.Black, fontSize = 20.sp, color = ElectricGreen)
             }
 
@@ -656,7 +744,13 @@ fun GameHeadsUpScreen(
                 Text(text = "$correctCount", fontSize = 64.sp, fontWeight = FontWeight.Black, color = ElectricGreen)
                 Text(text = "Palabras Adivinadas", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = TextPrimary)
                 Spacer(modifier = Modifier.height(8.dp))
-                Text(text = "Pasadas: $passedCount • Temática: ${selectedTheme.name}", fontSize = 13.sp, color = TextSecondary)
+                val durLabel = HeadsUpDurationOptions.find { it.seconds == selectedDurationSec }?.label ?: "1 min"
+                Text(
+                  text = "Pasadas: $passedCount • Duración: $durLabel • ${selectedTheme.name}",
+                  fontSize = 13.sp,
+                  color = TextSecondary,
+                  textAlign = TextAlign.Center
+                )
               }
             }
 

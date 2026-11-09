@@ -6,7 +6,6 @@ import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -20,11 +19,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -97,156 +94,159 @@ data class ImpostorThemeCategory(
   val entries: List<ImpostorWordEntry>
 )
 
+// Pistas naturales y cotidianas (LATAM): 1 palabra (o 2 máx.) que tiene relación directa
+// con la palabra secreta para que el Impostor pueda hablar sin levantar sospechas,
+// pero sin regalar cuál es exactamente la palabra.
 private val AnimalEntries = listOf(
-  ImpostorWordEntry("Camaleón", "Se adapta silenciosamente a su entorno y cambia según la situación", "Animales"),
-  ImpostorWordEntry("Delfín", "Muy inteligente, sociable y da grandes saltos en el agua", "Animales"),
-  ImpostorWordEntry("León", "Símbolo de realeza salvaje, liderazgo y melena imponente", "Animales"),
-  ImpostorWordEntry("Pingüino", "Siempre parece vestir de gala y camina de forma peculiar en el frío", "Animales"),
-  ImpostorWordEntry("Pulpo", "Maestro del camuflaje marino con extremidades muy versátiles", "Animales"),
-  ImpostorWordEntry("Águila Real", "Visión aguda desde las alturas y vuelo majestuoso", "Animales"),
-  ImpostorWordEntry("Lobo", "Lealtad a su manada y famoso por sus sonidos bajo la luna", "Animales"),
-  ImpostorWordEntry("Oso Panda", "Tranquilo, adorable y fanático de masticar tallos verdes todo el día", "Animales"),
-  ImpostorWordEntry("Canguro", "Se desplaza con grandes impulsos y lleva todo consigo adelante", "Animales"),
-  ImpostorWordEntry("Tiburón Blanco", "Depredador temido que nunca deja de moverse bajo la superficie", "Animales"),
-  ImpostorWordEntry("Perezoso", "Se toma la vida con muchísima calma en lo alto de los árboles", "Animales"),
-  ImpostorWordEntry("Flamenco", "Elegante, de tono rosado y famoso por mantener el equilibrio en una pata", "Animales"),
-  ImpostorWordEntry("Cobra Real", "Postura hipnótica y sigilosa que impone respeto inmediato", "Animales"),
-  ImpostorWordEntry("Gorila", "Fuerza colosal en la selva y se golpea el pecho para imponer presencia", "Animales"),
-  ImpostorWordEntry("Búho", "Vigilante nocturno que puede girar la cabeza casi por completo", "Animales"),
-  ImpostorWordEntry("Guepardo", "Aceleración pura y manchas que corren a máxima velocidad", "Animales"),
-  ImpostorWordEntry("Ornitorrinco", "Una combinación tan rara de rasgos que parece inventado", "Animales"),
-  ImpostorWordEntry("Murciélago", "Sale de noche, se orienta con eco y duerme de cabeza", "Animales"),
-  ImpostorWordEntry("Zorro", "Famoso en las fábulas por su astucia y cola esponjosa", "Animales"),
-  ImpostorWordEntry("Ballena Azul", "El gigante más colosal y pacífico de las profundidades", "Animales"),
-  ImpostorWordEntry("Escorpión", "Pequeño, blindado y con una defensa peligrosa en la punta de la cola", "Animales"),
-  ImpostorWordEntry("Pavo Real", "Exhibe un abanico espectacular de colores para llamar la atención", "Animales")
+  ImpostorWordEntry("Camaleón", "Rama", "Animales"),
+  ImpostorWordEntry("Delfín", "Salto", "Animales"),
+  ImpostorWordEntry("León", "Selva", "Animales"),
+  ImpostorWordEntry("Pingüino", "Hielo", "Animales"),
+  ImpostorWordEntry("Pulpo", "Mar", "Animales"),
+  ImpostorWordEntry("Águila Real", "Vuelo", "Animales"),
+  ImpostorWordEntry("Lobo", "Noche", "Animales"),
+  ImpostorWordEntry("Oso Panda", "Hojas", "Animales"),
+  ImpostorWordEntry("Canguro", "Brinco", "Animales"),
+  ImpostorWordEntry("Tiburón Blanco", "Profundo", "Animales"),
+  ImpostorWordEntry("Perezoso", "Árbol", "Animales"),
+  ImpostorWordEntry("Flamenco", "Laguna", "Animales"),
+  ImpostorWordEntry("Cobra Real", "Veneno", "Animales"),
+  ImpostorWordEntry("Gorila", "Fuerza", "Animales"),
+  ImpostorWordEntry("Búho", "Ojos", "Animales"),
+  ImpostorWordEntry("Guepardo", "Carrera", "Animales"),
+  ImpostorWordEntry("Ornitorrinco", "Río", "Animales"),
+  ImpostorWordEntry("Murciélago", "Cueva", "Animales"),
+  ImpostorWordEntry("Zorro", "Bosque", "Animales"),
+  ImpostorWordEntry("Ballena Azul", "Gigante", "Animales"),
+  ImpostorWordEntry("Escorpión", "Desierto", "Animales"),
+  ImpostorWordEntry("Pavo Real", "Plumas", "Animales")
 )
 
 private val ObjectEntries = listOf(
-  ImpostorWordEntry("Brújula", "Nunca pierde el norte cuando estás desorientado", "Objetos"),
-  ImpostorWordEntry("Reloj de Arena", "Mide algo que cae grano a grano y se reinicia al darle la vuelta", "Objetos"),
-  ImpostorWordEntry("Paraguas", "Se abre solo cuando el cielo se pone difícil y suele olvidarse al salir", "Objetos"),
-  ImpostorWordEntry("Espejo", "Siempre te devuelve exactamente lo que tiene enfrente sin mentir", "Objetos"),
-  ImpostorWordEntry("Candado", "Guarda secretos bajo llave y requiere una combinación o pieza exacta", "Objetos"),
-  ImpostorWordEntry("Telescopio", "Acerca mundos lejanos que brillan en la oscuridad", "Objetos"),
-  ImpostorWordEntry("Microondas", "Calienta todo en segundos mientras da vueltas por dentro", "Objetos"),
-  ImpostorWordEntry("Extintor", "Siempre está colgado esperando una emergencia de calor para actuar", "Objetos"),
-  ImpostorWordEntry("Auriculares", "Te aíslan del mundo exterior para que solo escuches tu propio ritmo", "Objetos"),
-  ImpostorWordEntry("Maleta de Viaje", "Va llena de ropa e ilusiones antes de pasar por el aeropuerto", "Objetos"),
-  ImpostorWordEntry("Termómetro", "Sube o baja para delatar si algo está hirviendo o tienes fiebre", "Objetos"),
-  ImpostorWordEntry("Lupa", "Hace que los detalles más pequeños se vean gigantes para investigar", "Objetos"),
-  ImpostorWordEntry("Imán", "Atrae metales sin necesidad de pegamento", "Objetos"),
-  ImpostorWordEntry("Ancla", "Pesada y metálica; sirve para quedarse firme en un solo lugar en el mar", "Objetos"),
-  ImpostorWordEntry("Paracaídas", "Tu única salvación de tela cuando saltas desde muy alto", "Objetos"),
-  ImpostorWordEntry("Bumerán", "Por más lejos que lo lances con fuerza, busca volver a tu mano", "Objetos"),
-  ImpostorWordEntry("Semáforo", "Controla el caos de la calle cambiando entre tres colores", "Objetos"),
-  ImpostorWordEntry("Cofre del Tesoro", "Madera antigua y metal que esconde riquezas bajo llave", "Objetos"),
-  ImpostorWordEntry("Billetera", "Viaja en el bolsillo con documentos, tarjetas y algo de efectivo", "Objetos"),
-  ImpostorWordEntry("Tijeras", "Dos hojas afiladas que solo funcionan trabajando juntas para cortar", "Objetos")
+  ImpostorWordEntry("Brújula", "Mapa", "Objetos"),
+  ImpostorWordEntry("Reloj de Arena", "Minutos", "Objetos"),
+  ImpostorWordEntry("Paraguas", "Lluvia", "Objetos"),
+  ImpostorWordEntry("Espejo", "Baño", "Objetos"),
+  ImpostorWordEntry("Candado", "Reja", "Objetos"),
+  ImpostorWordEntry("Telescopio", "Estrellas", "Objetos"),
+  ImpostorWordEntry("Microondas", "Cocina", "Objetos"),
+  ImpostorWordEntry("Extintor", "Humo", "Objetos"),
+  ImpostorWordEntry("Auriculares", "Música", "Objetos"),
+  ImpostorWordEntry("Maleta de Viaje", "Ropa", "Objetos"),
+  ImpostorWordEntry("Termómetro", "Fiebre", "Objetos"),
+  ImpostorWordEntry("Lupa", "Vidrio", "Objetos"),
+  ImpostorWordEntry("Imán", "Nevera", "Objetos"),
+  ImpostorWordEntry("Ancla", "Barco", "Objetos"),
+  ImpostorWordEntry("Paracaídas", "Avión", "Objetos"),
+  ImpostorWordEntry("Bumerán", "Viento", "Objetos"),
+  ImpostorWordEntry("Semáforo", "Esquina", "Objetos"),
+  ImpostorWordEntry("Cofre del Tesoro", "Monedas", "Objetos"),
+  ImpostorWordEntry("Billetera", "Tarjetas", "Objetos"),
+  ImpostorWordEntry("Tijeras", "Papel", "Objetos")
 )
 
 private val AbstractEntries = listOf(
-  ImpostorWordEntry("El Tiempo", "Avanza sin detenerse jamás, no se puede tocar y vale oro", "Cosas Abstractas"),
-  ImpostorWordEntry("La Nostalgia", "Esa emoción suave y agridulce al recordar buenos momentos del pasado", "Cosas Abstractas"),
-  ImpostorWordEntry("El Karma", "La ley invisible de que todo lo que haces tarde o temprano regresa", "Cosas Abstractas"),
-  ImpostorWordEntry("El Silencio", "Existe cuando nadie habla y se rompe en cuanto lo nombras", "Cosas Abstractas"),
-  ImpostorWordEntry("La Gravedad", "Fuerza invisible que nos mantiene con los pies en la tierra", "Cosas Abstractas"),
-  ImpostorWordEntry("Un Secreto", "Algo que deja de serlo si se lo cuentas a demasiadas personas", "Cosas Abstractas"),
-  ImpostorWordEntry("La Suerte", "El azar inexplicable que hace que todo salga bien en el momento justo", "Cosas Abstractas"),
-  ImpostorWordEntry("El Destino", "La idea de que el futuro ya está escrito sin importar qué camino tomes", "Cosas Abstractas"),
-  ImpostorWordEntry("Un Sueño", "Historia vívida que ocurre en tu mente mientras duermes", "Cosas Abstractas"),
-  ImpostorWordEntry("La Paciencia", "La virtud de saber esperar con calma sin desesperarse", "Cosas Abstractas"),
-  ImpostorWordEntry("El Caos", "Desorden total donde nada sigue las reglas habituales", "Cosas Abstractas"),
-  ImpostorWordEntry("La Libertad", "Poder elegir tu propio camino sin ataduras ni jaulas", "Cosas Abstractas"),
-  ImpostorWordEntry("La Ironía", "Cuando ocurre o se dice exactamente lo contrario de lo que se esperaba", "Cosas Abstractas"),
-  ImpostorWordEntry("Un Recuerdo", "Una fotografía mental que guardas en la memoria con los años", "Cosas Abstractas"),
-  ImpostorWordEntry("El Orgullo", "Sentimiento fuerte que a veces impide pedir perdón o reconocer un fallo", "Cosas Abstractas"),
-  ImpostorWordEntry("El Infinito", "Algo que no tiene principio ni final y se representa con un ocho acostado", "Cosas Abstractas"),
-  ImpostorWordEntry("Un Rumor", "Algo que corre de boca en boca sin saber si es verdad o mentira", "Cosas Abstractas"),
-  ImpostorWordEntry("Una Promesa", "Un compromiso de palabra que no debería romperse nunca", "Cosas Abstractas"),
-  ImpostorWordEntry("El Miedo", "Alerta interna que acelera el corazón ante lo desconocido", "Cosas Abstractas"),
-  ImpostorWordEntry("La Envidia", "Deseo incómodo por lo que otra persona tiene o logra", "Cosas Abstractas")
+  ImpostorWordEntry("El Tiempo", "Reloj", "Cosas Abstractas"),
+  ImpostorWordEntry("La Nostalgia", "Recuerdos", "Cosas Abstractas"),
+  ImpostorWordEntry("El Karma", "Acciones", "Cosas Abstractas"),
+  ImpostorWordEntry("El Silencio", "Madrugada", "Cosas Abstractas"),
+  ImpostorWordEntry("La Gravedad", "Piso", "Cosas Abstractas"),
+  ImpostorWordEntry("Un Secreto", "Confianza", "Cosas Abstractas"),
+  ImpostorWordEntry("La Suerte", "Lotería", "Cosas Abstractas"),
+  ImpostorWordEntry("El Destino", "Futuro", "Cosas Abstractas"),
+  ImpostorWordEntry("Un Sueño", "Dormir", "Cosas Abstractas"),
+  ImpostorWordEntry("La Paciencia", "Fila", "Cosas Abstractas"),
+  ImpostorWordEntry("El Caos", "Tráfico", "Cosas Abstractas"),
+  ImpostorWordEntry("La Libertad", "Viajar", "Cosas Abstractas"),
+  ImpostorWordEntry("La Ironía", "Broma", "Cosas Abstractas"),
+  ImpostorWordEntry("Un Recuerdo", "Foto", "Cosas Abstractas"),
+  ImpostorWordEntry("El Orgullo", "Disculpa", "Cosas Abstractas"),
+  ImpostorWordEntry("El Infinito", "Universo", "Cosas Abstractas"),
+  ImpostorWordEntry("Un Rumor", "Chisme", "Cosas Abstractas"),
+  ImpostorWordEntry("Una Promesa", "Juramento", "Cosas Abstractas"),
+  ImpostorWordEntry("El Miedo", "Oscuridad", "Cosas Abstractas"),
+  ImpostorWordEntry("La Envidia", "Éxito", "Cosas Abstractas")
 )
 
 private val SeriesEntries = listOf(
-  ImpostorWordEntry("Stranger Things", "Grupo de amigos en bicicleta, luces navideñas y otra dimensión ochentera", "Series Populares"),
-  ImpostorWordEntry("La Casa de Papel", "Overoles rojos, máscaras famosas y un plan milimétrico del Profesor", "Series Populares"),
-  ImpostorWordEntry("El Juego del Calamar", "Juegos infantiles tradicionales con un premio millonario y guardias de rosa", "Series Populares"),
-  ImpostorWordEntry("Breaking Bad", "Química de alto nivel en el desierto y una transformación implacable", "Series Populares"),
-  ImpostorWordEntry("Los Simpson", "Familia amarilla legendaria que parece haber predicho todo lo que pasa", "Series Populares"),
-  ImpostorWordEntry("Merlina (Wednesday)", "Humor negro, trenzas oscuras, violonchelo y una academia para raros", "Series Populares"),
-  ImpostorWordEntry("Game of Thrones", "Reinos rivales, dragones, invierno amenazante y lucha por el poder", "Series Populares"),
-  ImpostorWordEntry("The Walking Dead", "Supervivencia extrema en un mundo invadido por caminantes sin vida", "Series Populares"),
-  ImpostorWordEntry("Friends", "Seis amigos inseparables, un sofá en una cafetería y risas en Nueva York", "Series Populares"),
-  ImpostorWordEntry("Peaky Blinders", "Boinas con filo, trajes elegantes y negocios turbios en Inglaterra", "Series Populares"),
-  ImpostorWordEntry("Cobra Kai", "Rivalidad de karate que regresa décadas después con nuevos alumnos", "Series Populares"),
-  ImpostorWordEntry("Rick y Morty", "Un abuelo científico loco y su nieto viajando por portales interdimensionales", "Series Populares"),
-  ImpostorWordEntry("Black Mirror", "Historias independientes sobre el lado más inquietante de la tecnología", "Series Populares"),
-  ImpostorWordEntry("The Boys", "Cuando los superhéroes famosos son en realidad corporativos y corruptos", "Series Populares"),
-  ImpostorWordEntry("One Piece", "Búsqueda del tesoro definitivo navegando con una tripulación muy leal", "Series Populares"),
-  ImpostorWordEntry("Bob Esponja", "Aventuras bajo el mar, hamburguesas secretas y una piña como hogar", "Series Populares"),
-  ImpostorWordEntry("Dragon Ball Z", "Guerreros que entrenan al límite, esferas mágicas y transformaciones doradas", "Series Populares"),
-  ImpostorWordEntry("The Last of Us", "Un viaje peligroso cruzando un país devastado por una infección de hongos", "Series Populares"),
-  ImpostorWordEntry("Dark", "Una cueva en el bosque alemán y misterios familiares a través de las décadas", "Series Populares"),
-  ImpostorWordEntry("The Mandalorian", "Un cazarrecompensas con casco metálico protegiendo a una criatura pequeña", "Series Populares")
+  ImpostorWordEntry("Stranger Things", "Monstruos", "Series Populares"),
+  ImpostorWordEntry("La Casa de Papel", "Banco", "Series Populares"),
+  ImpostorWordEntry("El Juego del Calamar", "Millonario", "Series Populares"),
+  ImpostorWordEntry("Breaking Bad", "Química", "Series Populares"),
+  ImpostorWordEntry("Los Simpson", "Familia", "Series Populares"),
+  ImpostorWordEntry("Merlina (Wednesday)", "Colegio", "Series Populares"),
+  ImpostorWordEntry("Game of Thrones", "Espadas", "Series Populares"),
+  ImpostorWordEntry("The Walking Dead", "Apocalipsis", "Series Populares"),
+  ImpostorWordEntry("Friends", "Departamento", "Series Populares"),
+  ImpostorWordEntry("Peaky Blinders", "Mafia", "Series Populares"),
+  ImpostorWordEntry("Cobra Kai", "Pelea", "Series Populares"),
+  ImpostorWordEntry("Rick y Morty", "Científico", "Series Populares"),
+  ImpostorWordEntry("Black Mirror", "Tecnología", "Series Populares"),
+  ImpostorWordEntry("The Boys", "Poderes", "Series Populares"),
+  ImpostorWordEntry("One Piece", "Barco", "Series Populares"),
+  ImpostorWordEntry("Bob Esponja", "Fondo del mar", "Series Populares"),
+  ImpostorWordEntry("Dragon Ball Z", "Combate", "Series Populares"),
+  ImpostorWordEntry("The Last of Us", "Infección", "Series Populares"),
+  ImpostorWordEntry("Dark", "Tiempo", "Series Populares"),
+  ImpostorWordEntry("The Mandalorian", "Espacio", "Series Populares")
 )
 
 private val MovieEntries = listOf(
-  ImpostorWordEntry("Titanic", "Un romance inolvidable a bordo de un gigante de lujo en aguas heladas", "Películas Populares"),
-  ImpostorWordEntry("Avatar", "Un planeta exuberante de seres altos y azules conectados con la naturaleza", "Películas Populares"),
-  ImpostorWordEntry("Harry Potter", "Un colegio oculto, varitas, cicatriz famosa y amistad contra la oscuridad", "Películas Populares"),
-  ImpostorWordEntry("El Rey León", "El ciclo de la vida en la sabana africana y el regreso del heredero", "Películas Populares"),
-  ImpostorWordEntry("Toy Story", "Cobra vida secreta en la habitación en cuanto los humanos no están mirando", "Películas Populares"),
-  ImpostorWordEntry("Shrek", "Un pantano tranquilo, un burro parlanchín y un cuento de hadas al revés", "Películas Populares"),
-  ImpostorWordEntry("Avengers: Endgame", "Gemas cósmicas, viajes en el tiempo y la batalla final de todos los héroes", "Películas Populares"),
-  ImpostorWordEntry("Spider-Man", "Saltos entre rascacielos, sentido de alerta y gran responsabilidad juvenil", "Películas Populares"),
-  ImpostorWordEntry("Jurassic Park", "Una isla temática donde la ciencia revivió gigantes prehistóricos", "Películas Populares"),
-  ImpostorWordEntry("Coco", "Música de guitarra, flores naranjas y un viaje colorido para recordar a la familia", "Películas Populares"),
-  ImpostorWordEntry("Joker", "Una risa incontrolable, maquillaje colorido y caos en una ciudad sombría", "Películas Populares"),
-  ImpostorWordEntry("Matrix", "Elegir entre dos pastillas para descubrir que la realidad es una simulación", "Películas Populares"),
-  ImpostorWordEntry("Rápidos y Furiosos", "Motores al límite, adrenalina en el asfalto y la familia como lema", "Películas Populares"),
-  ImpostorWordEntry("Interestelar", "Un viaje espacial desesperado a través de un agujero de gusano por la humanidad", "Películas Populares"),
-  ImpostorWordEntry("El Padrino", "Honor familiar, trajes clásicos y ofertas que nadie puede rechazar", "Películas Populares"),
-  ImpostorWordEntry("Piratas del Caribe", "Barcos fantasma, brújula extraña y un capitán muy excéntrico en el mar", "Películas Populares"),
-  ImpostorWordEntry("Barbie", "Un mundo perfectamente rosa que choca de frente con el mundo real", "Películas Populares"),
-  ImpostorWordEntry("El Señor de los Anillos", "Una larga caminata hacia un volcán para destruir una joya muy peligrosa", "Películas Populares"),
-  ImpostorWordEntry("Mi Pobre Angelito", "Quedarse solo en casa en Navidad y defenderla con trampas ingeniosas", "Películas Populares"),
-  ImpostorWordEntry("Intensamente", "Pequeños personajes de colores manejando el panel de control de la mente", "Películas Populares")
+  ImpostorWordEntry("Titanic", "Océano", "Películas Populares"),
+  ImpostorWordEntry("Avatar", "Selva", "Películas Populares"),
+  ImpostorWordEntry("Harry Potter", "Magia", "Películas Populares"),
+  ImpostorWordEntry("El Rey León", "África", "Películas Populares"),
+  ImpostorWordEntry("Toy Story", "Cuarto", "Películas Populares"),
+  ImpostorWordEntry("Shrek", "Cuento", "Películas Populares"),
+  ImpostorWordEntry("Avengers: Endgame", "Batalla", "Películas Populares"),
+  ImpostorWordEntry("Spider-Man", "Ciudad", "Películas Populares"),
+  ImpostorWordEntry("Jurassic Park", "Isla", "Películas Populares"),
+  ImpostorWordEntry("Coco", "Guitarra", "Películas Populares"),
+  ImpostorWordEntry("Joker", "Maquillaje", "Películas Populares"),
+  ImpostorWordEntry("Matrix", "Computadora", "Películas Populares"),
+  ImpostorWordEntry("Rápidos y Furiosos", "Motores", "Películas Populares"),
+  ImpostorWordEntry("Interestelar", "Planetas", "Películas Populares"),
+  ImpostorWordEntry("El Padrino", "Jefe", "Películas Populares"),
+  ImpostorWordEntry("Piratas del Caribe", "Mar", "Películas Populares"),
+  ImpostorWordEntry("Barbie", "Rosa", "Películas Populares"),
+  ImpostorWordEntry("El Señor de los Anillos", "Montaña", "Películas Populares"),
+  ImpostorWordEntry("Mi Pobre Angelito", "Navidad", "Películas Populares"),
+  ImpostorWordEntry("Intensamente", "Mente", "Películas Populares")
 )
 
 private val StyleEntries = listOf(
-  ImpostorWordEntry("Zapatillas Jordan", "Calzado icónico nacido en las canchas que hoy es joya de colección urbana", "Estilo y Moda"),
-  ImpostorWordEntry("Chaqueta de Cuero", "Prenda con actitud rebelde, rockera y clásica que nunca pasa de moda", "Estilo y Moda"),
-  ImpostorWordEntry("Gafas de Sol Vintage", "Accesorio oscuro para los ojos con estética retro y misteriosa", "Estilo y Moda"),
-  ImpostorWordEntry("Alfombra Roja", "El pasillo donde las estrellas posan ante miles de cámaras con sus mejores galas", "Estilo y Moda"),
-  ImpostorWordEntry("Perfume Francés", "Aroma elegante en un frasco pequeño que deja huella al pasar", "Estilo y Moda"),
-  ImpostorWordEntry("Tatuaje Minimalista", "Un diseño pequeño de tinta en la piel con significado personal", "Estilo y Moda"),
-  ImpostorWordEntry("Traje de Gala (Esmoquin)", "La máxima etiqueta de elegancia para una noche de premiación o boda", "Estilo y Moda"),
-  ImpostorWordEntry("Ropa Oversize", "Estilo urbano de llevar prendas varias tallas más holgadas y cómodas", "Estilo y Moda"),
-  ImpostorWordEntry("Corte Degradado (Fade)", "Estilo de barbería muy pulido donde el cabello se difumina gradualmente", "Estilo y Moda"),
-  ImpostorWordEntry("Reloj de Lujo", "Joya de precisión en la muñeca que simboliza estatus y puntualidad", "Estilo y Moda"),
-  ImpostorWordEntry("Pasarela de Moda", "Escenario largo donde se camina con actitud mostrando la nueva colección", "Estilo y Moda"),
-  ImpostorWordEntry("Cadena de Oro", "Accesorio brillante en el cuello muy popular en la cultura urbana", "Estilo y Moda"),
-  ImpostorWordEntry("Tacones de Aguja", "Calzado que estiliza la altura con un soporte muy fino y elegante", "Estilo y Moda"),
-  ImpostorWordEntry("Botas Vaqueras", "Calzado de piel con punta marcada y espíritu del viejo oeste", "Estilo y Moda"),
-  ImpostorWordEntry("Gorra Urbana", "Accesorio en la cabeza con visera para protegerse del sol o completar el outfit", "Estilo y Moda")
+  ImpostorWordEntry("Zapatillas Jordan", "Cancha", "Estilo y Moda"),
+  ImpostorWordEntry("Chaqueta de Cuero", "Moto", "Estilo y Moda"),
+  ImpostorWordEntry("Gafas de Sol Vintage", "Playa", "Estilo y Moda"),
+  ImpostorWordEntry("Alfombra Roja", "Famosos", "Estilo y Moda"),
+  ImpostorWordEntry("Perfume Francés", "Olor", "Estilo y Moda"),
+  ImpostorWordEntry("Tatuaje Minimalista", "Aguja", "Estilo y Moda"),
+  ImpostorWordEntry("Traje de Gala (Esmoquin)", "Boda", "Estilo y Moda"),
+  ImpostorWordEntry("Ropa Oversize", "Ancho", "Estilo y Moda"),
+  ImpostorWordEntry("Corte Degradado (Fade)", "Barbería", "Estilo y Moda"),
+  ImpostorWordEntry("Reloj de Lujo", "Muñeca", "Estilo y Moda"),
+  ImpostorWordEntry("Pasarela de Moda", "Modelos", "Estilo y Moda"),
+  ImpostorWordEntry("Cadena de Oro", "Cuello", "Estilo y Moda"),
+  ImpostorWordEntry("Tacones de Aguja", "Fiesta", "Estilo y Moda"),
+  ImpostorWordEntry("Botas Vaqueras", "Rancho", "Estilo y Moda"),
+  ImpostorWordEntry("Gorra Urbana", "Sol", "Estilo y Moda")
 )
 
 private val FoodAndPlacesEntries = listOf(
-  ImpostorWordEntry("Pizza Napolitana", "Masa redonda horneada con queso derretido que se comparte en triángulos", "Comidas y Lugares"),
-  ImpostorWordEntry("Tacos al Pastor", "Tortilla suave con carne marinada, piña y salsa picante", "Comidas y Lugares"),
-  ImpostorWordEntry("Sushi", "Bocados japoneses de arroz y pescado fresco que se comen con palillos", "Comidas y Lugares"),
-  ImpostorWordEntry("Hamburguesa Doble", "Entre dos panes con carne, queso fundido y papas como acompañante", "Comidas y Lugares"),
-  ImpostorWordEntry("Helado de Chocolate", "Postre frío y cremoso que se derrite rápido si hace calor", "Comidas y Lugares"),
-  ImpostorWordEntry("Torre Eiffel", "Estructura de hierro famosa en la ciudad del romance", "Comidas y Lugares"),
-  ImpostorWordEntry("Pirámides de Egipto", "Monumentos antiguos y gigantes en medio de la arena del desierto", "Comidas y Lugares"),
-  ImpostorWordEntry("Isla Desierta", "Rodeada de mar por todas partes con apenas una palmera y arena", "Comidas y Lugares"),
-  ImpostorWordEntry("Triángulo de las Bermudas", "Zona del océano famosa por leyendas de barcos y aviones desaparecidos", "Comidas y Lugares"),
-  ImpostorWordEntry("Casino de Las Vegas", "Luces de neón, ruletas, cartas y apuestas que no duermen de noche", "Comidas y Lugares"),
-  ImpostorWordEntry("Estación Espacial", "Laboratorio flotando en órbita donde los astronautas ven la Tierra desde arriba", "Comidas y Lugares"),
-  ImpostorWordEntry("Área 51", "Base secreta en el desierto rodeada de teorías sobre ovnis y extraterrestres", "Comidas y Lugares"),
-  ImpostorWordEntry("Parque de Diversiones", "Montañas rusas, algodón de azúcar y gritos de adrenalina", "Comidas y Lugares"),
-  ImpostorWordEntry("Crucero de Lujo", "Un hotel gigante con piscinas y restaurantes que navega por el mar", "Comidas y Lugares")
+  ImpostorWordEntry("Pizza Napolitana", "Horno", "Comidas y Lugares"),
+  ImpostorWordEntry("Tacos al Pastor", "Salsa", "Comidas y Lugares"),
+  ImpostorWordEntry("Sushi", "Arroz", "Comidas y Lugares"),
+  ImpostorWordEntry("Hamburguesa Doble", "Papas", "Comidas y Lugares"),
+  ImpostorWordEntry("Helado de Chocolate", "Postre", "Comidas y Lugares"),
+  ImpostorWordEntry("Torre Eiffel", "Europa", "Comidas y Lugares"),
+  ImpostorWordEntry("Pirámides de Egipto", "Arena", "Comidas y Lugares"),
+  ImpostorWordEntry("Isla Desierta", "Palmera", "Comidas y Lugares"),
+  ImpostorWordEntry("Triángulo de las Bermudas", "Misterio", "Comidas y Lugares"),
+  ImpostorWordEntry("Casino de Las Vegas", "Apuestas", "Comidas y Lugares"),
+  ImpostorWordEntry("Estación Espacial", "Gravedad", "Comidas y Lugares"),
+  ImpostorWordEntry("Área 51", "Secreto", "Comidas y Lugares"),
+  ImpostorWordEntry("Parque de Diversiones", "Juegos", "Comidas y Lugares"),
+  ImpostorWordEntry("Crucero de Lujo", "Vacaciones", "Comidas y Lugares")
 )
 
 val ImpostorThemes = listOf(
@@ -281,6 +281,23 @@ data class ImpostorPlayerState(
   val isEliminated: Boolean = false
 )
 
+data class ImpostorRoundSummary(
+  val innocentsWon: Boolean,
+  val impostorNames: String,
+  val impostorCount: Int,
+  val word: String,
+  val hint: String,
+  val categoryLabel: String
+)
+
+private fun maxAllowedImpostorsForPlayers(playerCount: Int): Int {
+  return when {
+    playerCount >= 7 -> 3
+    playerCount >= 5 -> 2
+    else -> 1
+  }
+}
+
 @Composable
 fun GameImpostorScreen(
   initialPlayerName: String = "Jugador 1",
@@ -305,6 +322,7 @@ fun GameImpostorScreen(
 
   var selectedTheme by remember { mutableStateOf(ImpostorThemes[0]) }
   var giveImpostorHint by remember { mutableStateOf(true) }
+  var selectedImpostorCount by remember { mutableIntStateOf(1) }
   var phase by remember { mutableStateOf(ImpostorPhase.SETUP) }
 
   // Active match state
@@ -314,15 +332,47 @@ fun GameImpostorScreen(
   var isCardRevealed by remember { mutableStateOf(false) }
   var starterPlayerName by remember { mutableStateOf("") }
   var lastEjectedPlayer by remember { mutableStateOf<ImpostorPlayerState?>(null) }
-  var innocentsWon by remember { mutableStateOf(true) }
+
+  // Frozen snapshot for GAME_OVER so starting a new round never flashes the new secret word during exit animation
+  var roundOverSummary by remember {
+    mutableStateOf(
+      ImpostorRoundSummary(
+        innocentsWon = true,
+        impostorNames = "",
+        impostorCount = 1,
+        word = "",
+        hint = "",
+        categoryLabel = ""
+      )
+    )
+  }
+
+  // When "ALL_MIXED" (Todo Mezclado) is selected, hide the category during reveal and debate
+  val isRandomMixedMode = selectedTheme.id == "ALL_MIXED"
 
   fun persistRoster() {
     PlayerRosterManager.savePartyPlayers(context, playerNames.toList())
+    val maxImp = maxAllowedImpostorsForPlayers(playerNames.size)
+    if (selectedImpostorCount > maxImp) {
+      selectedImpostorCount = maxImp
+    }
+  }
+
+  fun captureRoundSummary(didInnocentsWin: Boolean) {
+    val allImpostors = matchPlayers.filter { it.isImpostor }
+    val namesJoined = allImpostors.joinToString(", ") { it.name }.ifEmpty { "Desconocido" }
+    roundOverSummary = ImpostorRoundSummary(
+      innocentsWon = didInnocentsWin,
+      impostorNames = namesJoined,
+      impostorCount = allImpostors.size.coerceAtLeast(1),
+      word = secretEntry.word,
+      hint = secretEntry.hint,
+      categoryLabel = secretEntry.categoryLabel
+    )
   }
 
   fun startNewImpostorMatch() {
     persistRoster()
-    // Pick secret word using anti-repeat history
     val chosenEntry = WordHistoryManager.pickSmartItem(
       context = context,
       categoryKey = "IMPOSTOR_${selectedTheme.id}",
@@ -331,9 +381,9 @@ fun GameImpostorScreen(
     )
     secretEntry = chosenEntry
 
-    // Assign 1 impostor (or 2 if 7+ players)
     val total = playerNames.size
-    val impostorIndex = Random.nextInt(total)
+    val actualImpostorCount = selectedImpostorCount.coerceIn(1, maxAllowedImpostorsForPlayers(total))
+    val impostorIndices = (0 until total).shuffled().take(actualImpostorCount).toSet()
 
     matchPlayers.clear()
     playerNames.forEachIndexed { idx, name ->
@@ -341,19 +391,18 @@ fun GameImpostorScreen(
         ImpostorPlayerState(
           id = idx + 1,
           name = name,
-          isImpostor = (idx == impostorIndex),
+          isImpostor = idx in impostorIndices,
           isEliminated = false
         )
       )
     }
 
-    // Choose who starts speaking:
-    // Low but non-zero probability (~12%) that the Impostor starts the round!
-    val impostorPlayer = matchPlayers.firstOrNull { it.isImpostor }
+    // Low but non-zero probability (~12%) that an Impostor starts the round
+    val impostorPlayers = matchPlayers.filter { it.isImpostor }
     val innocentPlayers = matchPlayers.filter { !it.isImpostor }
     val impostorStarts = Random.nextFloat() < 0.12f
-    starterPlayerName = if (impostorStarts && impostorPlayer != null) {
-      impostorPlayer.name
+    starterPlayerName = if (impostorStarts && impostorPlayers.isNotEmpty()) {
+      impostorPlayers.random().name
     } else {
       innocentPlayers.randomOrNull()?.name ?: matchPlayers.first().name
     }
@@ -416,6 +465,7 @@ fun GameImpostorScreen(
     ) { currentPhase ->
       when (currentPhase) {
         ImpostorPhase.SETUP -> {
+          val maxImpostors = maxAllowedImpostorsForPlayers(playerNames.size)
           Column(modifier = Modifier.fillMaxSize()) {
             LazyColumn(
               modifier = Modifier.weight(1f),
@@ -438,11 +488,77 @@ fun GameImpostorScreen(
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                      text = "Todos ven la palabra secreta menos el Impostor, quien recibe una pista sutil para camuflarse. Digan una palabra o pista por turnos y voten manualmente para expulsar al sospechoso.",
+                      text = "Los inocentes ven la palabra secreta y los impostores reciben una pista natural para camuflarse. Los impostores ganan si logran igualar en número a los inocentes.",
                       fontSize = 12.sp,
                       color = TextSecondary,
                       lineHeight = 17.sp
                     )
+                  }
+                }
+              }
+
+              // Impostor count selector (1, 2 or 3 based on player count)
+              item {
+                Card(
+                  colors = CardDefaults.cardColors(containerColor = SurfaceDark),
+                  shape = RoundedCornerShape(16.dp),
+                  modifier = Modifier
+                    .fillMaxWidth()
+                    .border(1.dp, Color(0xFF282C40), RoundedCornerShape(16.dp))
+                ) {
+                  Column(modifier = Modifier.padding(14.dp)) {
+                    Text(
+                      text = "🕵️ Cantidad de Impostores:",
+                      fontWeight = FontWeight.Bold,
+                      fontSize = 14.sp,
+                      color = ElectricGold
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                      text = "1 impostor (3+ jug.) • 2 impostores (5+ jug.) • 3 impostores (7+ jug.)",
+                      fontSize = 11.sp,
+                      color = TextSecondary
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                      modifier = Modifier.fillMaxWidth(),
+                      horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                      listOf(
+                        Triple(1, "1 Impostor", 3),
+                        Triple(2, "2 Impostores", 5),
+                        Triple(3, "3 Impostores", 7)
+                      ).forEach { (count, label, minReq) ->
+                        val enabled = playerNames.size >= minReq
+                        val selected = selectedImpostorCount == count
+                        FilterChip(
+                          selected = selected,
+                          enabled = enabled,
+                          onClick = {
+                            HapticHelper.click(context)
+                            selectedImpostorCount = count
+                          },
+                          label = {
+                            Text(
+                              text = if (enabled) label else "$label (${minReq}+)",
+                              fontSize = 11.sp,
+                              fontWeight = FontWeight.Bold,
+                              textAlign = TextAlign.Center,
+                              modifier = Modifier.fillMaxWidth()
+                            )
+                          },
+                          modifier = Modifier.weight(1f),
+                          colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = NeonPink,
+                            selectedLabelColor = Color.White,
+                            containerColor = SurfaceVariantDark,
+                            labelColor = TextSecondary,
+                            disabledContainerColor = Color(0xFF141622),
+                            disabledLabelColor = TextMuted
+                          )
+                        )
+                      }
+                    }
                   }
                 }
               }
@@ -463,13 +579,13 @@ fun GameImpostorScreen(
                   ) {
                     Column(modifier = Modifier.weight(1f)) {
                       Text(
-                        text = "💡 Pista Inteligente para el Impostor",
+                        text = "💡 Pista de Apoyo para el Impostor",
                         fontWeight = FontWeight.Bold,
                         fontSize = 14.sp,
                         color = TextPrimary
                       )
                       Text(
-                        text = "Le da contexto sutil para que pueda engañar mejor",
+                        text = "Una palabra cotidiana relacionada que no lo delata ni le regala la respuesta",
                         fontSize = 11.sp,
                         color = TextSecondary
                       )
@@ -526,7 +642,11 @@ fun GameImpostorScreen(
                     Spacer(modifier = Modifier.width(12.dp))
                     Column(modifier = Modifier.weight(1f)) {
                       Text(text = theme.name, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = TextPrimary)
-                      Text(text = "${theme.entries.size} palabras con pistas únicas", fontSize = 11.sp, color = TextSecondary)
+                      Text(
+                        text = if (theme.id == "ALL_MIXED") "${theme.entries.size} palabras • Categoría oculta" else "${theme.entries.size} palabras con pistas cotidianas",
+                        fontSize = 11.sp,
+                        color = TextSecondary
+                      )
                     }
                     if (isSelected) {
                       Text(text = "ACTIVO", fontWeight = FontWeight.Black, fontSize = 11.sp, color = NeonPink)
@@ -539,7 +659,7 @@ fun GameImpostorScreen(
               item {
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                  text = "Jugadores Guardados (${playerNames.size} — Mín. 3):",
+                  text = "Jugadores Guardados (${playerNames.size} — Máx. $maxImpostors impostor${if (maxImpostors > 1) "es" else ""}):",
                   fontWeight = FontWeight.Bold,
                   fontSize = 15.sp,
                   color = ElectricGold
@@ -631,8 +751,9 @@ fun GameImpostorScreen(
             ) {
               Icon(Icons.Default.PlayArrow, contentDescription = null)
               Spacer(modifier = Modifier.width(8.dp))
+              val impLabel = if (selectedImpostorCount == 1) "1 IMPOSTOR" else "$selectedImpostorCount IMPOSTORES"
               Text(
-                text = "¡REPARTIR ROLES SECRETOS!",
+                text = "¡REPARTIR ROLES ($impLabel)!",
                 fontWeight = FontWeight.Black,
                 fontSize = 16.sp
               )
@@ -709,13 +830,15 @@ fun GameImpostorScreen(
                         color = NeonPink,
                         textAlign = TextAlign.Center
                       )
-                      Spacer(modifier = Modifier.height(8.dp))
-                      Text(
-                        text = "Categoría: ${secretEntry.categoryLabel}",
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = ElectricGold
-                      )
+                      if (!isRandomMixedMode) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                          text = "Categoría: ${secretEntry.categoryLabel}",
+                          fontSize = 13.sp,
+                          fontWeight = FontWeight.Bold,
+                          color = ElectricGold
+                        )
+                      }
                       if (giveImpostorHint) {
                         Spacer(modifier = Modifier.height(12.dp))
                         Box(
@@ -728,7 +851,7 @@ fun GameImpostorScreen(
                         ) {
                           Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
-                              text = "💡 TU PISTA SUTIL PARA CAMUFLARTE:",
+                              text = "💡 PISTA RELACIONADA:",
                               fontSize = 11.sp,
                               fontWeight = FontWeight.Black,
                               color = NeonCyan
@@ -736,8 +859,8 @@ fun GameImpostorScreen(
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
                               text = secretEntry.hint,
-                              fontSize = 14.sp,
-                              fontWeight = FontWeight.SemiBold,
+                              fontSize = 22.sp,
+                              fontWeight = FontWeight.Black,
                               color = TextPrimary,
                               textAlign = TextAlign.Center
                             )
@@ -753,12 +876,14 @@ fun GameImpostorScreen(
                         fontWeight = FontWeight.Black,
                         color = ElectricGreen
                       )
-                      Spacer(modifier = Modifier.height(6.dp))
-                      Text(
-                        text = "Categoría: ${secretEntry.categoryLabel}",
-                        fontSize = 12.sp,
-                        color = TextSecondary
-                      )
+                      if (!isRandomMixedMode) {
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                          text = "Categoría: ${secretEntry.categoryLabel}",
+                          fontSize = 12.sp,
+                          color = TextSecondary
+                        )
+                      }
                       Spacer(modifier = Modifier.height(12.dp))
                       Box(
                         modifier = Modifier
@@ -844,6 +969,9 @@ fun GameImpostorScreen(
 
         ImpostorPhase.DEBATE -> {
           val activePlayers = matchPlayers.filter { !it.isEliminated }
+          val remainingImpostors = activePlayers.count { it.isImpostor }
+          val remainingInnocents = activePlayers.count { !it.isImpostor }
+
           Column(
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -866,14 +994,23 @@ fun GameImpostorScreen(
                   fontSize = 16.sp,
                   color = ElectricGold
                 )
-                Spacer(modifier = Modifier.height(10.dp))
+                if (!isRandomMixedMode) {
+                  Spacer(modifier = Modifier.height(8.dp))
+                  Text(
+                    text = "Categoría: ${secretEntry.categoryLabel}",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp,
+                    color = NeonCyan
+                  )
+                }
+                Spacer(modifier = Modifier.height(6.dp))
                 Text(
-                  text = "Categoría: ${secretEntry.categoryLabel}",
-                  fontWeight = FontWeight.Bold,
-                  fontSize = 14.sp,
-                  color = NeonCyan
+                  text = "🕵️ Impostores activos: $remainingImpostors • Inocentes: $remainingInnocents",
+                  fontSize = 12.sp,
+                  fontWeight = FontWeight.SemiBold,
+                  color = NeonPink
                 )
-                Spacer(modifier = Modifier.height(14.dp))
+                Spacer(modifier = Modifier.height(12.dp))
                 Box(
                   modifier = Modifier
                     .fillMaxWidth()
@@ -899,7 +1036,7 @@ fun GameImpostorScreen(
                 }
                 Spacer(modifier = Modifier.height(10.dp))
                 Text(
-                  text = "Cada jugador dice una palabra o frase corta sobre el tema en círculo. ¡Luego debatan quién está fingiendo!",
+                  text = "Cada jugador dice una palabra relacionada en círculo. ¡Luego voten para expulsar al sospechoso!",
                   fontSize = 12.sp,
                   color = TextSecondary,
                   textAlign = TextAlign.Center
@@ -1002,7 +1139,6 @@ fun GameImpostorScreen(
                     .fillMaxWidth()
                     .border(1.dp, Color(0xFF2E334D), RoundedCornerShape(16.dp))
                     .clickable {
-                      // Eject this player manually
                       val idx = matchPlayers.indexOfFirst { it.id == p.id }
                       if (idx >= 0) {
                         val updated = matchPlayers[idx].copy(isEliminated = true)
@@ -1012,32 +1148,38 @@ fun GameImpostorScreen(
                         val remainingImpostors = matchPlayers.count { !it.isEliminated && it.isImpostor }
                         val remainingInnocents = matchPlayers.count { !it.isEliminated && !it.isImpostor }
 
-                        if (updated.isImpostor && remainingImpostors == 0) {
+                        if (remainingImpostors == 0) {
+                          // All impostors caught -> Innocents Win!
                           HapticHelper.vibrateOnly(context, 90L)
                           SoundHelper.playVictory()
-                          innocentsWon = true
+                          captureRoundSummary(didInnocentsWin = true)
                           phase = ImpostorPhase.GAME_OVER
                           onRecordResult(
                             600,
-                            "El Impostor: Atraparon a ${updated.name} (Palabra: ${secretEntry.word})",
+                            "El Impostor: Descubrieron a ${roundOverSummary.impostorNames} (Palabra: ${secretEntry.word})",
                             "Modo El Impostor",
                             true
                           )
-                        } else if (remainingInnocents <= remainingImpostors) {
+                        } else if (remainingImpostors >= remainingInnocents) {
+                          // Impostors equal (or outnumber) Innocents -> Impostors Win!
                           HapticHelper.vibrateOnly(context, 160L)
                           SoundHelper.playBuzzer()
-                          innocentsWon = false
+                          captureRoundSummary(didInnocentsWin = false)
                           phase = ImpostorPhase.GAME_OVER
-                          val realImpostor = matchPlayers.firstOrNull { it.isImpostor }?.name ?: "Impostor"
                           onRecordResult(
                             400,
-                            "El Impostor: Ganó el Impostor $realImpostor (Palabra: ${secretEntry.word})",
+                            "El Impostor: Ganó ${roundOverSummary.impostorNames} al igualar a los inocentes (${secretEntry.word})",
                             "Modo El Impostor",
                             false
                           )
                         } else {
-                          HapticHelper.vibrateOnly(context, 140L)
-                          SoundHelper.playBuzzer()
+                          // Game continues: reveal whether the ejected player was an Impostor or Innocent
+                          HapticHelper.vibrateOnly(context, 120L)
+                          if (updated.isImpostor) {
+                            SoundHelper.playSuccess()
+                          } else {
+                            SoundHelper.playBuzzer()
+                          }
                           phase = ImpostorPhase.ELIMINATION_REVEAL
                         }
                       }
@@ -1083,7 +1225,11 @@ fun GameImpostorScreen(
 
         ImpostorPhase.ELIMINATION_REVEAL -> {
           val ejected = lastEjectedPlayer
-          val remainingCount = matchPlayers.count { !it.isEliminated }
+          val wasImpostor = ejected?.isImpostor == true
+          val remainingActive = matchPlayers.filter { !it.isEliminated }
+          val remainingImpostors = remainingActive.count { it.isImpostor }
+          val remainingInnocents = remainingActive.count { !it.isImpostor }
+
           Column(
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -1094,13 +1240,13 @@ fun GameImpostorScreen(
               shape = RoundedCornerShape(22.dp),
               modifier = Modifier
                 .fillMaxWidth()
-                .border(2.dp, NeonPink, RoundedCornerShape(22.dp))
+                .border(2.dp, if (wasImpostor) ElectricGreen else NeonPink, RoundedCornerShape(22.dp))
             ) {
               Column(
                 modifier = Modifier.padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
               ) {
-                Text(text = "😱", fontSize = 56.sp)
+                Text(text = if (wasImpostor) "🕵️" else "😱", fontSize = 56.sp)
                 Spacer(modifier = Modifier.height(10.dp))
                 Text(
                   text = "${ejected?.name ?: "Jugador"} ha sido expulsado...",
@@ -1111,14 +1257,15 @@ fun GameImpostorScreen(
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                  text = "¡¡ERA INOCENTE!! ❌",
+                  text = if (wasImpostor) "¡¡SÍ ERA UN IMPOSTOR!! ✅" else "¡¡ERA INOCENTE!! ❌",
                   fontSize = 24.sp,
                   fontWeight = FontWeight.Black,
-                  color = NeonPink
+                  color = if (wasImpostor) ElectricGreen else NeonPink,
+                  textAlign = TextAlign.Center
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                  text = "El Impostor sigue oculto entre los $remainingCount jugadores restantes.",
+                  text = "Quedan $remainingImpostors impostor${if (remainingImpostors > 1) "es" else ""} y $remainingInnocents inocentes en juego.\n(Los impostores ganan si igualan a los inocentes)",
                   fontSize = 13.sp,
                   color = TextSecondary,
                   textAlign = TextAlign.Center
@@ -1131,12 +1278,11 @@ fun GameImpostorScreen(
             Button(
               onClick = {
                 HapticHelper.click(context)
-                // Pick a new starter from remaining players (12% chance impostor)
                 val active = matchPlayers.filter { !it.isEliminated }
-                val imp = active.firstOrNull { it.isImpostor }
+                val imps = active.filter { it.isImpostor }
                 val inno = active.filter { !it.isImpostor }
-                starterPlayerName = if (Random.nextFloat() < 0.12f && imp != null) {
-                  imp.name
+                starterPlayerName = if (Random.nextFloat() < 0.12f && imps.isNotEmpty()) {
+                  imps.random().name
                 } else {
                   inno.randomOrNull()?.name ?: active.first().name
                 }
@@ -1154,20 +1300,22 @@ fun GameImpostorScreen(
             Button(
               onClick = {
                 HapticHelper.click(context)
-                innocentsWon = false
+                captureRoundSummary(didInnocentsWin = false)
                 phase = ImpostorPhase.GAME_OVER
               },
               modifier = Modifier.fillMaxWidth().height(52.dp),
               shape = RoundedCornerShape(14.dp),
               colors = ButtonDefaults.buttonColors(containerColor = SurfaceVariantDark, contentColor = TextSecondary)
             ) {
-              Text("Rendirse y Revelar al Impostor", fontWeight = FontWeight.Bold)
+              Text("Rendirse y Revelar Roles", fontWeight = FontWeight.Bold)
             }
           }
         }
 
         ImpostorPhase.GAME_OVER -> {
-          val realImpostor = matchPlayers.firstOrNull { it.isImpostor }
+          // Render exclusively from the frozen roundOverSummary snapshot so starting a new round
+          // NEVER flashes the new secret word while GAME_OVER fades out!
+          val summary = roundOverSummary
           Column(
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -1180,7 +1328,7 @@ fun GameImpostorScreen(
                 .fillMaxWidth()
                 .border(
                   width = 2.dp,
-                  color = if (innocentsWon) ElectricGreen else NeonPink,
+                  color = if (summary.innocentsWon) ElectricGreen else NeonPink,
                   shape = RoundedCornerShape(24.dp)
                 )
             ) {
@@ -1189,23 +1337,30 @@ fun GameImpostorScreen(
                 horizontalAlignment = Alignment.CenterHorizontally
               ) {
                 Text(
-                  text = if (innocentsWon) "🎉 ¡GANAN LOS INOCENTES! 🎉" else "🕵️ ¡GANÓ EL IMPOSTOR! 🕵️",
+                  text = if (summary.innocentsWon) {
+                    "🎉 ¡GANAN LOS INOCENTES! 🎉"
+                  } else if (summary.impostorCount > 1) {
+                    "🕵️ ¡GANARON LOS IMPOSTORES! 🕵️"
+                  } else {
+                    "🕵️ ¡GANÓ EL IMPOSTOR! 🕵️"
+                  },
                   fontSize = 22.sp,
                   fontWeight = FontWeight.Black,
-                  color = if (innocentsWon) ElectricGreen else NeonPink,
+                  color = if (summary.innocentsWon) ElectricGreen else NeonPink,
                   textAlign = TextAlign.Center
                 )
                 Spacer(modifier = Modifier.height(14.dp))
                 Text(
-                  text = "El Impostor era:",
+                  text = if (summary.impostorCount > 1) "Los Impostores eran:" else "El Impostor era:",
                   fontSize = 13.sp,
                   color = TextSecondary
                 )
                 Text(
-                  text = realImpostor?.name ?: "Desconocido",
-                  fontSize = 28.sp,
+                  text = summary.impostorNames,
+                  fontSize = 26.sp,
                   fontWeight = FontWeight.Black,
-                  color = ElectricGold
+                  color = ElectricGold,
+                  textAlign = TextAlign.Center
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -1218,12 +1373,12 @@ fun GameImpostorScreen(
                     .padding(14.dp)
                 ) {
                   Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-                    Text(text = "Palabra Secreta (${secretEntry.categoryLabel}):", fontSize = 12.sp, color = NeonCyan)
-                    Text(text = secretEntry.word, fontSize = 22.sp, fontWeight = FontWeight.Black, color = Color.White)
+                    Text(text = "Palabra Secreta (${summary.categoryLabel}):", fontSize = 12.sp, color = NeonCyan)
+                    Text(text = summary.word, fontSize = 22.sp, fontWeight = FontWeight.Black, color = Color.White)
                     if (giveImpostorHint) {
                       Spacer(modifier = Modifier.height(6.dp))
                       Text(
-                        text = "Pista del Impostor: \"${secretEntry.hint}\"",
+                        text = "Pista del Impostor: \"${summary.hint}\"",
                         fontSize = 11.sp,
                         color = TextSecondary,
                         textAlign = TextAlign.Center

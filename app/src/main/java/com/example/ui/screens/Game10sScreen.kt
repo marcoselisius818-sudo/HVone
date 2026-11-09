@@ -7,21 +7,17 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -34,21 +30,23 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -61,7 +59,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.example.data.model.GameType
 import com.example.ui.theme.ElectricGold
 import com.example.ui.theme.ElectricGreen
 import com.example.ui.theme.MagentaGlow
@@ -77,6 +74,14 @@ import com.example.ui.util.SoundHelper
 import kotlinx.coroutines.delay
 import java.util.Locale
 import kotlin.math.abs
+import kotlin.random.Random
+
+enum class BlindTimerMode(val label: String, val fixedSeconds: Int?) {
+  SEC_1("1.00s", 1),
+  SEC_10("10.00s", 10),
+  SEC_15("15.00s", 15),
+  RANDOM_1_30("🎲 Azar (1-30s)", null)
+}
 
 @Composable
 fun Game10sScreen(
@@ -87,7 +92,6 @@ fun Game10sScreen(
   onRecordResult: (score: Int, detail: String, opponent: String, isWin: Boolean, diffMs: Long) -> Unit
 ) {
   BackHandler { onBack() }
-  val context = LocalContext.current
 
   if (isDuel) {
     Game10sDuelView(
@@ -110,34 +114,51 @@ private fun Game10sSoloView(
   onRecordResult: (score: Int, detail: String, opponent: String, isWin: Boolean, diffMs: Long) -> Unit
 ) {
   val context = LocalContext.current
+  val isMuted by SoundHelper.isMuted.collectAsStateWithLifecycle()
+
+  var selectedMode by remember { mutableStateOf(BlindTimerMode.SEC_10) }
+  var targetSeconds by remember { mutableIntStateOf(10) }
   var isRunning by remember { mutableStateOf(false) }
   var startTime by remember { mutableLongStateOf(0L) }
   var elapsedTime by remember { mutableLongStateOf(0L) }
   var stoppedTime by remember { mutableLongStateOf(0L) }
   var isCompleted by remember { mutableStateOf(false) }
 
+  val targetTimeMs = targetSeconds * 1000L
+  val isOneSecondMode = targetSeconds == 1
+  val blindThresholdMs = if (isOneSecondMode) 0L else targetTimeMs / 2L
+
   // Timer loop
-  LaunchedEffect(isRunning) {
+  LaunchedEffect(isRunning, targetTimeMs) {
     if (isRunning) {
       startTime = SystemClock.elapsedRealtime()
       var lastWholeSec = 0
+      val maxVisibleTickSec = (blindThresholdMs / 1000L).toInt()
       while (isRunning) {
         elapsedTime = SystemClock.elapsedRealtime() - startTime
         val wholeSec = (elapsedTime / 1000L).toInt()
-        if (wholeSec > lastWholeSec && wholeSec <= 5) {
+        if (!isOneSecondMode && wholeSec > lastWholeSec && wholeSec <= maxVisibleTickSec) {
           lastWholeSec = wholeSec
-          SoundHelper.playTick(urgency = wholeSec * 0.15f)
+          SoundHelper.playTick(urgency = (wholeSec.toFloat() / maxVisibleTickSec.coerceAtLeast(1)).coerceIn(0f, 1f))
         }
         delay(16) // ~60fps
       }
     }
   }
 
-  val isMuted by SoundHelper.isMuted.collectAsStateWithLifecycle()
   val displaySeconds = elapsedTime / 1000f
-  val isBlind = isRunning && elapsedTime >= 5000L
+  val isFullyBlind = isRunning && (isOneSecondMode || elapsedTime >= blindThresholdMs)
 
-  val diffMs = abs(stoppedTime - 10000L)
+  // Progressive fade-out alpha from 1.0f down to 0.0f up to half of targetTimeMs (except in 1s mode)
+  val progressiveAlpha = if (!isRunning) {
+    1f
+  } else if (isOneSecondMode) {
+    0f
+  } else {
+    (1f - (elapsedTime.toFloat() / blindThresholdMs.coerceAtLeast(1L).toFloat())).coerceIn(0f, 1f)
+  }
+
+  val diffMs = abs(stoppedTime - targetTimeMs)
   val score = if (isCompleted) {
     val raw = 10000 - diffMs * 2
     raw.coerceIn(0, 10000).toInt()
@@ -149,6 +170,14 @@ private fun Game10sSoloView(
     diffMs <= 200 -> "⚡ ¡OJO DE HALCÓN!"
     diffMs <= 500 -> "✨ ¡MUY CERCA!"
     else -> "😅 ¡SIGUE PRACTICANDO!"
+  }
+
+  fun startSoloChallenge() {
+    targetSeconds = selectedMode.fixedSeconds ?: Random.nextInt(1, 31)
+    elapsedTime = 0L
+    stoppedTime = 0L
+    isCompleted = false
+    isRunning = true
   }
 
   Column(
@@ -180,7 +209,7 @@ private fun Game10sSoloView(
         }
         Spacer(modifier = Modifier.width(8.dp))
         Text(
-          text = "Reto 10.00s",
+          text = "Cronómetro a Ciegas",
           style = MaterialTheme.typography.titleLarge,
           fontWeight = FontWeight.Bold,
           color = TextPrimary
@@ -195,29 +224,83 @@ private fun Game10sSoloView(
       }
     }
 
-    Spacer(modifier = Modifier.height(16.dp))
+    Spacer(modifier = Modifier.height(10.dp))
 
-    // Instruction pill
-    Card(
-      colors = CardDefaults.cardColors(containerColor = SurfaceVariantDark),
-      shape = RoundedCornerShape(12.dp),
-      modifier = Modifier.fillMaxWidth()
+    // Mode Selector Chips (1s, 10s, 15s, Random 1-30s)
+    Row(
+      modifier = Modifier.fillMaxWidth(),
+      horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-      Row(
-        modifier = Modifier.padding(12.dp),
-        verticalAlignment = Alignment.CenterVertically
-      ) {
-        Text(text = "🎯", fontSize = 24.sp)
-        Spacer(modifier = Modifier.width(12.dp))
-        Text(
-          text = "A los 5.00s la pantalla se apaga. ¡Usa tu ritmo y frena exactamente en 10.000s!",
-          style = MaterialTheme.typography.bodySmall,
-          color = TextSecondary
+      BlindTimerMode.entries.forEach { mode ->
+        val selected = selectedMode == mode
+        FilterChip(
+          selected = selected,
+          enabled = !isRunning,
+          onClick = {
+            HapticHelper.click(context)
+            selectedMode = mode
+            targetSeconds = mode.fixedSeconds ?: Random.nextInt(1, 31)
+            isCompleted = false
+            elapsedTime = 0L
+            stoppedTime = 0L
+          },
+          label = {
+            Text(
+              text = mode.label,
+              fontSize = 11.sp,
+              fontWeight = FontWeight.Bold,
+              textAlign = TextAlign.Center,
+              modifier = Modifier.fillMaxWidth()
+            )
+          },
+          modifier = Modifier.weight(1f),
+          colors = FilterChipDefaults.filterChipColors(
+            selectedContainerColor = NeonCyan,
+            selectedLabelColor = Color.Black,
+            containerColor = SurfaceDark,
+            labelColor = TextSecondary
+          )
         )
       }
     }
 
-    Spacer(modifier = Modifier.height(32.dp))
+    Spacer(modifier = Modifier.height(10.dp))
+
+    // Target & Instruction Banner
+    Card(
+      colors = CardDefaults.cardColors(containerColor = SurfaceVariantDark),
+      shape = RoundedCornerShape(14.dp),
+      modifier = Modifier.fillMaxWidth()
+    ) {
+      Column(
+        modifier = Modifier.padding(12.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+      ) {
+        Text(
+          text = if (selectedMode == BlindTimerMode.RANDOM_1_30) {
+            "🎲 OBJETIVO AL AZAR: ${targetSeconds}.000s EXACTOS"
+          } else {
+            "🎯 OBJETIVO: ${targetSeconds}.000s EXACTOS"
+          },
+          fontWeight = FontWeight.Black,
+          fontSize = 16.sp,
+          color = ElectricGold
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+          text = if (isOneSecondMode) {
+            "Modo 1.00s: Directamente a ciegas sin desvanecimiento. ¡Pura intuición!"
+          } else {
+            "El cronómetro se desvanece progresivamente hasta los ${String.format(Locale.US, "%.1fs", targetSeconds / 2f)} y queda en incógnito."
+          },
+          style = MaterialTheme.typography.bodySmall,
+          color = TextSecondary,
+          textAlign = TextAlign.Center
+        )
+      }
+    }
+
+    Spacer(modifier = Modifier.height(24.dp))
 
     // Main Timer Display Box
     Box(
@@ -229,14 +312,14 @@ private fun Game10sSoloView(
           Brush.verticalGradient(
             colors = listOf(
               SurfaceDark,
-              if (isBlind) Color(0xFF1E0A1E) else SurfaceVariantDark
+              if (isFullyBlind) Color(0xFF1E0A1E) else SurfaceVariantDark
             )
           )
         )
         .border(
           width = 2.dp,
           brush = Brush.horizontalGradient(
-            colors = if (isBlind) listOf(NeonPink, MagentaGlow) else listOf(NeonCyan, NeonPink)
+            colors = if (isFullyBlind) listOf(NeonPink, MagentaGlow) else listOf(NeonCyan, NeonPink)
           ),
           shape = RoundedCornerShape(24.dp)
         ),
@@ -253,13 +336,13 @@ private fun Game10sSoloView(
           )
           Spacer(modifier = Modifier.height(6.dp))
           Text(
-            text = if (stoppedTime >= 10000) "+${diffMs}ms de exceso" else "-${diffMs}ms antes",
-            fontSize = 16.sp,
+            text = if (stoppedTime >= targetTimeMs) "+${diffMs}ms de exceso (Meta: ${targetSeconds}.000s)" else "-${diffMs}ms antes (Meta: ${targetSeconds}.000s)",
+            fontSize = 14.sp,
             fontWeight = FontWeight.SemiBold,
             color = if (diffMs <= 100) ElectricGreen else NeonPink
           )
         }
-      } else if (isBlind) {
+      } else if (isFullyBlind) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
           Text(
             text = "? ? . ? ? ?",
@@ -270,24 +353,35 @@ private fun Game10sSoloView(
           )
           Spacer(modifier = Modifier.height(8.dp))
           Text(
-            text = "⚡ ¡A CIEGAS! ¡SIENTE EL TIEMPO! ⚡",
+            text = "⚡ ¡A CIEGAS! META: ${targetSeconds}.000s ⚡",
             fontSize = 13.sp,
             fontWeight = FontWeight.Bold,
             color = Color.White
           )
         }
       } else {
-        Text(
-          text = String.format(Locale.US, "%.3fs", displaySeconds),
-          fontSize = 50.sp,
-          fontWeight = FontWeight.Black,
-          fontFamily = FontFamily.Monospace,
-          color = NeonCyan
-        )
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+          Text(
+            text = String.format(Locale.US, "%.3fs", displaySeconds),
+            fontSize = 50.sp,
+            fontWeight = FontWeight.Black,
+            fontFamily = FontFamily.Monospace,
+            color = NeonCyan,
+            modifier = Modifier.alpha(progressiveAlpha)
+          )
+          if (isRunning && !isOneSecondMode) {
+            Spacer(modifier = Modifier.height(6.dp))
+            Text(
+              text = "Desvaneciéndose hacia modo incógnito...",
+              fontSize = 11.sp,
+              color = TextSecondary.copy(alpha = progressiveAlpha.coerceAtLeast(0.25f))
+            )
+          }
+        }
       }
     }
 
-    Spacer(modifier = Modifier.height(32.dp))
+    Spacer(modifier = Modifier.height(24.dp))
 
     // Result card if completed
     AnimatedVisibility(
@@ -344,10 +438,7 @@ private fun Game10sSoloView(
       Button(
         onClick = {
           HapticHelper.click(context)
-          isRunning = true
-          isCompleted = false
-          elapsedTime = 0L
-          stoppedTime = 0L
+          startSoloChallenge()
         },
         modifier = Modifier
           .fillMaxWidth()
@@ -361,7 +452,11 @@ private fun Game10sSoloView(
       ) {
         Icon(Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(28.dp))
         Spacer(modifier = Modifier.width(8.dp))
-        Text(text = "¡COMENZAR DESAFÍO!", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+        Text(
+          text = if (selectedMode == BlindTimerMode.RANDOM_1_30) "¡SORTEAR META Y COMENZAR!" else "¡COMENZAR DESAFÍO (${targetSeconds}s)!",
+          fontSize = 17.sp,
+          fontWeight = FontWeight.Bold
+        )
       }
     } else if (isRunning) {
       Button(
@@ -370,13 +465,15 @@ private fun Game10sSoloView(
           isRunning = false
           stoppedTime = elapsedTime
           isCompleted = true
-          val isWin = diffMs <= 150L
+          val finalDiff = abs(stoppedTime - targetTimeMs)
+          val finalScore = (10000 - finalDiff * 2).coerceIn(0, 10000).toInt()
+          val isWin = finalDiff <= 150L
           onRecordResult(
-            score,
-            String.format(Locale.US, "%.3fs (dif: %dms)", stoppedTime / 1000f, diffMs),
-            "Desafío Solo",
+            finalScore,
+            String.format(Locale.US, "Meta %ds: %.3fs (dif: %dms)", targetSeconds, stoppedTime / 1000f, finalDiff),
+            "Desafío ${targetSeconds}s",
             isWin,
-            diffMs
+            finalDiff
           )
         },
         modifier = Modifier
@@ -391,17 +488,14 @@ private fun Game10sSoloView(
       ) {
         Icon(Icons.Default.Stop, contentDescription = null, modifier = Modifier.size(36.dp))
         Spacer(modifier = Modifier.width(12.dp))
-        Text(text = "¡¡ PARAR AHORA !!", fontSize = 22.sp, fontWeight = FontWeight.Black)
+        Text(text = "¡¡ PARAR EN ${targetSeconds}.000s !!", fontSize = 20.sp, fontWeight = FontWeight.Black)
       }
     } else {
       // Completed, Reintentar
       Button(
         onClick = {
           HapticHelper.click(context)
-          isCompleted = false
-          isRunning = true
-          elapsedTime = 0L
-          stoppedTime = 0L
+          startSoloChallenge()
         },
         modifier = Modifier
           .fillMaxWidth()
@@ -415,7 +509,11 @@ private fun Game10sSoloView(
       ) {
         Icon(Icons.Default.Refresh, contentDescription = null)
         Spacer(modifier = Modifier.width(8.dp))
-        Text(text = "Jugar de Nuevo", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+        Text(
+          text = if (selectedMode == BlindTimerMode.RANDOM_1_30) "Nuevo Tiempo Al Azar" else "Jugar de Nuevo",
+          fontSize = 16.sp,
+          fontWeight = FontWeight.Bold
+        )
       }
     }
 
@@ -431,6 +529,9 @@ private fun Game10sDuelView(
   onRecordResult: (score: Int, detail: String, opponent: String, isWin: Boolean, diffMs: Long) -> Unit
 ) {
   val context = LocalContext.current
+  var selectedMode by remember { mutableStateOf(BlindTimerMode.SEC_10) }
+  var targetSeconds by remember { mutableIntStateOf(10) }
+
   var isDuelRunning by remember { mutableStateOf(false) }
   var duelStartTime by remember { mutableLongStateOf(0L) }
   var duelElapsedTime by remember { mutableLongStateOf(0L) }
@@ -443,7 +544,11 @@ private fun Game10sDuelView(
 
   var roundFinished by remember { mutableStateOf(false) }
 
-  LaunchedEffect(isDuelRunning) {
+  val targetTimeMs = targetSeconds * 1000L
+  val isOneSecondMode = targetSeconds == 1
+  val blindThresholdMs = if (isOneSecondMode) 0L else targetTimeMs / 2L
+
+  LaunchedEffect(isDuelRunning, targetTimeMs) {
     if (isDuelRunning) {
       duelStartTime = SystemClock.elapsedRealtime()
       while (isDuelRunning) {
@@ -457,11 +562,29 @@ private fun Game10sDuelView(
     }
   }
 
-  val isBlind = isDuelRunning && duelElapsedTime >= 5000L
+  val isFullyBlind = isDuelRunning && (isOneSecondMode || duelElapsedTime >= blindThresholdMs)
+  val progressiveAlpha = if (!isDuelRunning) {
+    1f
+  } else if (isOneSecondMode) {
+    0f
+  } else {
+    (1f - (duelElapsedTime.toFloat() / blindThresholdMs.coerceAtLeast(1L).toFloat())).coerceIn(0f, 1f)
+  }
 
-  val p1Diff = abs(p1StoppedTime - 10000L)
-  val p2Diff = abs(p2StoppedTime - 10000L)
+  val p1Diff = abs(p1StoppedTime - targetTimeMs)
+  val p2Diff = abs(p2StoppedTime - targetTimeMs)
   val p1Won = roundFinished && p1Diff <= p2Diff
+
+  fun launchDuelRound() {
+    targetSeconds = selectedMode.fixedSeconds ?: Random.nextInt(1, 31)
+    p1StoppedTime = 0L
+    p2StoppedTime = 0L
+    p1HasStopped = false
+    p2HasStopped = false
+    roundFinished = false
+    duelElapsedTime = 0L
+    isDuelRunning = true
+  }
 
   // Record outcome when round finished
   LaunchedEffect(roundFinished) {
@@ -470,7 +593,7 @@ private fun Game10sDuelView(
       val p1Score = (10000 - p1Diff * 2).coerceIn(0, 10000).toInt()
       onRecordResult(
         p1Score,
-        "Duelo 10s: P1=%.3fs vs P2=%.3fs".format(Locale.US, p1StoppedTime / 1000f, p2StoppedTime / 1000f),
+        "Duelo ${targetSeconds}s: P1=%.3fs vs P2=%.3fs".format(Locale.US, p1StoppedTime / 1000f, p2StoppedTime / 1000f),
         player2Name,
         p1Won,
         p1Diff
@@ -490,11 +613,13 @@ private fun Game10sDuelView(
         .weight(1f)
         .graphicsLayer(rotationZ = 180f)
         .background(if (roundFinished && !p1Won) Color(0xFF1B3B24) else Color(0xFF141624))
-        .padding(16.dp)
+        .padding(14.dp)
     ) {
       DuelPlayerHalf(
         playerName = player2Name,
-        isBlind = isBlind,
+        targetSeconds = targetSeconds,
+        isFullyBlind = isFullyBlind,
+        progressiveAlpha = progressiveAlpha,
         elapsedTime = duelElapsedTime,
         stoppedTime = p2StoppedTime,
         hasStopped = p2HasStopped,
@@ -511,15 +636,50 @@ private fun Game10sDuelView(
       )
     }
 
-    // Center divider bar with Start / Restart controls
-    Box(
+    // Center divider bar with Mode Selector & Start / Restart controls
+    Column(
       modifier = Modifier
         .fillMaxWidth()
-        .height(56.dp)
         .background(Color(0xFF202334))
-        .padding(horizontal = 16.dp),
-      contentAlignment = Alignment.Center
+        .padding(horizontal = 12.dp, vertical = 6.dp),
+      horizontalAlignment = Alignment.CenterHorizontally
     ) {
+      if (!isDuelRunning) {
+        Row(
+          modifier = Modifier.fillMaxWidth(),
+          horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+          BlindTimerMode.entries.forEach { mode ->
+            val selected = selectedMode == mode
+            FilterChip(
+              selected = selected,
+              onClick = {
+                HapticHelper.click(context)
+                selectedMode = mode
+                targetSeconds = mode.fixedSeconds ?: Random.nextInt(1, 31)
+                roundFinished = false
+              },
+              label = {
+                Text(
+                  text = mode.label,
+                  fontSize = 10.sp,
+                  fontWeight = FontWeight.Bold,
+                  textAlign = TextAlign.Center,
+                  modifier = Modifier.fillMaxWidth()
+                )
+              },
+              modifier = Modifier.weight(1f),
+              colors = FilterChipDefaults.filterChipColors(
+                selectedContainerColor = ElectricGold,
+                selectedLabelColor = Color.Black,
+                containerColor = Color(0xFF141624),
+                labelColor = TextSecondary
+              )
+            )
+          }
+        }
+      }
+
       Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -536,30 +696,22 @@ private fun Game10sDuelView(
           Button(
             onClick = {
               HapticHelper.click(context)
-              p1StoppedTime = 0L
-              p2StoppedTime = 0L
-              p1HasStopped = false
-              p2HasStopped = false
-              roundFinished = false
-              duelElapsedTime = 0L
-              isDuelRunning = true
+              launchDuelRound()
             },
             colors = ButtonDefaults.buttonColors(containerColor = ElectricGold, contentColor = Color.Black),
             shape = RoundedCornerShape(12.dp)
           ) {
-            Text(text = "¡LISTOS! INICIAR DUELO", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+            Text(
+              text = if (selectedMode == BlindTimerMode.RANDOM_1_30) "¡DUELO AL AZAR (1-30s)!" else "¡INICIAR DUELO (${targetSeconds}s)!",
+              fontWeight = FontWeight.Bold,
+              fontSize = 13.sp
+            )
           }
         } else if (roundFinished) {
           Button(
             onClick = {
               HapticHelper.click(context)
-              p1StoppedTime = 0L
-              p2StoppedTime = 0L
-              p1HasStopped = false
-              p2HasStopped = false
-              roundFinished = false
-              duelElapsedTime = 0L
-              isDuelRunning = true
+              launchDuelRound()
             },
             colors = ButtonDefaults.buttonColors(containerColor = NeonCyan, contentColor = Color.Black),
             shape = RoundedCornerShape(12.dp)
@@ -568,14 +720,14 @@ private fun Game10sDuelView(
           }
         } else {
           Text(
-            text = if (isBlind) "¡¡ A CIEGAS EN 10.00s !!" else "¡CRONÓMETRO CORRIENDO!",
-            color = if (isBlind) NeonPink else NeonCyan,
+            text = if (isFullyBlind) "¡¡ A CIEGAS EN ${targetSeconds}.00s !!" else "META: ${targetSeconds}.000s",
+            color = if (isFullyBlind) NeonPink else NeonCyan,
             fontWeight = FontWeight.Black,
             fontSize = 13.sp
           )
         }
 
-        Text(text = "1v1", fontWeight = FontWeight.Black, color = TextMuted)
+        Text(text = "${targetSeconds}s", fontWeight = FontWeight.Black, color = ElectricGold)
       }
     }
 
@@ -585,11 +737,13 @@ private fun Game10sDuelView(
         .fillMaxWidth()
         .weight(1f)
         .background(if (roundFinished && p1Won) Color(0xFF1B3B24) else Color(0xFF161828))
-        .padding(16.dp)
+        .padding(14.dp)
     ) {
       DuelPlayerHalf(
         playerName = player1Name,
-        isBlind = isBlind,
+        targetSeconds = targetSeconds,
+        isFullyBlind = isFullyBlind,
+        progressiveAlpha = progressiveAlpha,
         elapsedTime = duelElapsedTime,
         stoppedTime = p1StoppedTime,
         hasStopped = p1HasStopped,
@@ -611,7 +765,9 @@ private fun Game10sDuelView(
 @Composable
 private fun DuelPlayerHalf(
   playerName: String,
-  isBlind: Boolean,
+  targetSeconds: Int,
+  isFullyBlind: Boolean,
+  progressiveAlpha: Float,
   elapsedTime: Long,
   stoppedTime: Long,
   hasStopped: Boolean,
@@ -620,6 +776,7 @@ private fun DuelPlayerHalf(
   buttonColor: Color,
   onStop: () -> Unit
 ) {
+  val targetTimeMs = targetSeconds * 1000L
   Column(
     modifier = Modifier.fillMaxSize(),
     horizontalAlignment = Alignment.CenterHorizontally,
@@ -631,9 +788,9 @@ private fun DuelPlayerHalf(
       verticalAlignment = Alignment.CenterVertically
     ) {
       Text(
-        text = playerName,
+        text = "$playerName (Meta: ${targetSeconds}s)",
         fontWeight = FontWeight.Bold,
-        fontSize = 18.sp,
+        fontSize = 16.sp,
         color = buttonColor
       )
       if (isWinner) {
@@ -645,7 +802,7 @@ private fun DuelPlayerHalf(
         )
       } else if (isRoundFinished) {
         Text(
-          text = "Diferencia: ${abs(stoppedTime - 10000L)}ms",
+          text = "Dif: ${abs(stoppedTime - targetTimeMs)}ms",
           fontWeight = FontWeight.SemiBold,
           fontSize = 14.sp,
           color = TextSecondary
@@ -657,7 +814,7 @@ private fun DuelPlayerHalf(
     Box(
       modifier = Modifier
         .fillMaxWidth()
-        .height(90.dp)
+        .height(82.dp)
         .clip(RoundedCornerShape(16.dp))
         .background(Color(0xFF0F101A)),
       contentAlignment = Alignment.Center
@@ -665,15 +822,15 @@ private fun DuelPlayerHalf(
       if (hasStopped) {
         Text(
           text = String.format(Locale.US, "%.3fs", stoppedTime / 1000f),
-          fontSize = 32.sp,
+          fontSize = 30.sp,
           fontWeight = FontWeight.Black,
           fontFamily = FontFamily.Monospace,
           color = if (isWinner) ElectricGold else TextPrimary
         )
-      } else if (isBlind) {
+      } else if (isFullyBlind) {
         Text(
           text = "??.???s",
-          fontSize = 32.sp,
+          fontSize = 30.sp,
           fontWeight = FontWeight.Black,
           fontFamily = FontFamily.Monospace,
           color = NeonPink
@@ -681,10 +838,11 @@ private fun DuelPlayerHalf(
       } else {
         Text(
           text = String.format(Locale.US, "%.3fs", elapsedTime / 1000f),
-          fontSize = 32.sp,
+          fontSize = 30.sp,
           fontWeight = FontWeight.Black,
           fontFamily = FontFamily.Monospace,
-          color = buttonColor
+          color = buttonColor,
+          modifier = Modifier.alpha(progressiveAlpha)
         )
       }
     }
@@ -695,7 +853,7 @@ private fun DuelPlayerHalf(
       enabled = !hasStopped,
       modifier = Modifier
         .fillMaxWidth()
-        .height(72.dp),
+        .height(66.dp),
       shape = RoundedCornerShape(18.dp),
       colors = ButtonDefaults.buttonColors(
         containerColor = if (hasStopped) Color.DarkGray else buttonColor,
@@ -703,8 +861,8 @@ private fun DuelPlayerHalf(
       )
     ) {
       Text(
-        text = if (hasStopped) "¡DETENIDO!" else "¡FRENAR!",
-        fontSize = 20.sp,
+        text = if (hasStopped) "¡DETENIDO!" else "¡FRENAR EN ${targetSeconds}.00s!",
+        fontSize = 18.sp,
         fontWeight = FontWeight.Black
       )
     }
